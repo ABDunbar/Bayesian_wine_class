@@ -146,35 +146,19 @@ Plot
 ```{r, echo=FALSE}
 par(mfrow=c(2,2))
 plot(total_sulfur_dioxide_range, total_sulfur_dioxide_probs, 
-     ylim=c(0,1),
-     type="l", 
-     lwd=3, 
-     lty=2, 
-     col="gold", 
+     ylim=c(0,1), type="l", lwd=3, lty=2, col="gold", 
      xlab="Total Sulfur Dioxide", ylab="P(conversion)", main="Probability of conversion")
 
 plot(sulphates_range, sulphates_probs, 
-     ylim=c(0,1),
-     type="l", 
-     lwd=3, 
-     lty=2, 
-     col="gold", 
+     ylim=c(0,1), type="l", lwd=3, lty=2, col="gold", 
      xlab="Total Sulphates", ylab="P(conversion)", main="Probability of conversion")
 
 plot(alcohol_range, alcohol_probs, 
-     ylim=c(0,1),
-     type="l", 
-     lwd=3, 
-     lty=2, 
-     col="gold", 
+     ylim=c(0,1), type="l", lwd=3, lty=2, col="gold", 
      xlab="Total Alcohol", ylab="P(conversion)", main="Probability of conversion")
 
 plot(volatile_acidity_range, volatile_acidity_probs, 
-     ylim=c(0,1),
-     type="l", 
-     lwd=3, 
-     lty=2, 
-     col="gold", 
+     ylim=c(0,1), type="l", lwd=3, lty=2, col="gold", 
      xlab="Total Volatile Acidity", ylab="P(conversion)", main="Probability of conversion")
 ```
 # 6. Bayesian Logistic Regression
@@ -190,15 +174,26 @@ lpost.LR <- function(beta,x,y){
   return(logl + lprior)
 }
 ```
-Start with smaller model of *** significance
+Start with smaller model of significant coefficients
+```{r}
+# fit <- glm(
+#   good ~ volatile_acidity + total_sulfur_dioxide + sulphates + alcohol,
+#   data = wine,
+#   family = binomial(link="logit")
+# )
+# fit$coefficients
+```
+Full model
 ```{r}
 fit <- glm(
-  good ~ volatile_acidity + total_sulfur_dioxide + sulphates + alcohol,
+  good ~ . - quality - drinkable,
   data = wine,
   family = binomial(link="logit")
 )
 fit$coefficients
 ```
+
+
 Set seed for reproducible results
 ```{r}
 set.seed(1234)
@@ -209,13 +204,20 @@ S <- 10^4
 ```
 Testing with significance ***
 ```{r}
-X=cbind(rep(1,nrow(wine)), wine$volatile_acidity, wine$total_sulfur_dioxide,
-         wine$sulphates, wine$alcohol)
+# X=cbind(rep(1,nrow(wine)), wine$volatile_acidity, wine$total_sulfur_dioxide,
+#          wine$sulphates, wine$alcohol)
 ```
-Choose 4 different initialisations for the coefficients
-
+Full model coefficients
 ```{r}
-init <- matrix(data=c(runif(20, min = 100, max = 200)), nrow=4, ncol=5, byrow = T)
+X = cbind(rep(1, nrow(wine)), wine$fixed_acidity, wine$volatile_acidity, wine$citric_acid,
+          wine$residual_sugar, wine$chlorides, wine$free_sulfur_dioxide, wine$total_sulfur_dioxide,
+          wine$density, wine$pH, wine$sulphates, wine$alcohol)
+```
+
+Choose 4 different initialisations for the coefficients
+```{r}
+# init <- matrix(data=c(runif(20, min = 100, max = 200)), nrow=4, ncol=5, byrow = T)  # for testing
+init <- matrix(data=c(runif(48, min = 100, max = 200)), nrow=4, ncol=12, byrow = T)
 init
 ```
 
@@ -329,7 +331,8 @@ beta_mat2 <- matrix(NA,nrow=S,ncol=ncol(X))
 beta_mat2[1,] <- as.numeric(coefficients(fit))
 
 y_new <- c(1)
-x_new <- c(1, 5, 0.63, 12, 0.6)
+# x_new <- c(1, 5, 0.63, 12, 0.6)  # for testing
+x_new <- c(7.5, 0.6, 0.0, 1.7, 0.085, 5., 45., 0.9965, 3.4, 12.)
 
 library(mvtnorm)
 
@@ -394,18 +397,20 @@ abline(h=fit$coefficients[5],col="red",lty=2)
 table(y_new[2000:10000])
 ```
 
-
-
-
 # 8. metrop() analysis of Q6
+Implementation of the `metrop()` function was through the [MCMC Package Example, Charles J. Geyer](https://cran.r-project.org/web/packages/mcmc/vignettes/demo.pdf)
 
-
+```{r}
+head(wine)
+```
 
 ```{r}
 library(mcmc)
-out <- glm(wine$quality ~ wine$volatile_acidity + wine$total_sulfur_dioxide + wine$sulphates + wine$alcohol, data=wine, family=binomial, x=TRUE)
-summary(out)
+# out <- glm(wine$quality ~ wine$volatile_acidity + wine$total_sulfur_dioxide + wine$sulphates + wine$alcohol, data=wine, family=binomial, x=TRUE)
+# summary(out)
 
+# full model
+out <- glm(good ~ . - quality - drinkable, data=wine, family=binomial, x=TRUE)
 ```
 
 ```{r}
@@ -422,38 +427,19 @@ lupost <- lupost_factory(out$x, out$y)
 
 ```{r}
 set.seed(1234)
-beta.init <- as.numeric(fit$coefficients)
+beta.init <- as.numeric(coefficients(out))
 out <- metrop(lupost, beta.init, 1e3)
-lupost <- lpost.LR(beta.init, X, y)
 
 names(out)
 ```
-
+Look at the acceptance rate.
 
 ```{r}
 out$accept
 ```
+This is very low, so we can adjust the scale parameter to find an acceptance rate around 20%.
 ```{r}
-out <- metrop(out, scale = 0.1)
-out$accept
-```
-```{r}
-out <- metrop(out, scale = 0.3)
-out$accept
-```
-
-```{r}
-out <- metrop(out, scale = 0.05)
-out$accept
-```
-
-```{r}
-out <- metrop(out, scale = 0.01)
-out$accept
-```
-
-```{r}
-out <- metrop(out, scale = 0.04)
+out <- metrop(out, scale = 0.0075)
 out$accept
 ```
 
@@ -463,15 +449,12 @@ out <- metrop(out, nbatch = 1e4)
 t.test(out$accept.batch)$conf.int
 ```
 
-```{r}
-out$time
-```
 
 
 ```{r}
 plot(ts(out$batch))
 ```
-
+Autocorrelation
 
 ```{r}
 acf(out$batch)
