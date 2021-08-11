@@ -1,0 +1,471 @@
+---
+title: "Assessment_3"
+author: "ABD"
+date: "8/9/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+```{r}
+# Clear environment ####
+rm(list = ls()) 
+
+# Clear plots
+graphics.off()  # Clears plots, closes all graphics devices
+
+# Clear console
+cat("\014")  # ctrl+L
+```
+```{r include=FALSE}
+# Install pacman ("package manager") if needed
+if (!require("pacman")) install.packages("pacman")
+
+# Load contributed packages with pacman
+pacman::p_load(pacman, rio, tidyverse, GGally, magrittr, broom, skimr)  #party, 
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# 2. Import data. 
+```{r}
+wine <- read.csv("winequality-red.csv")
+```
+Check for missing values
+```{r}
+any(is.na(wine))
+```
+# 3. Good wine > 6
+```{r}
+ wine %<>%
+  mutate(good = ifelse(quality > 6, 1, 0)) %>%
+  mutate(drinkable = ifelse(quality > 6, "good", "bad")) %>%
+  mutate(quality = factor(quality, levels=1:10))
+```
+
+Remove spaces from names
+```{r}
+
+colnames(wine) <- c("fixed_acidity", "volatile_acidity", "citric_acid",
+                      "residual_sugar", "chlorides", "free_sulfur_dioxide",
+                      "total_sulfur_dioxide", "density", "pH", "sulphates",
+                      "alcohol", "quality", "good", "drinkable")
+```
+Structure of dataset
+```{r}
+str(wine)
+```
+# 4. Frequentist Logistic Regression
+
+Compute model (glm())
+
+```{r}
+fit <- glm(
+  good ~ . - quality - drinkable,
+  data = wine,
+  family = binomial(link="logit")
+)
+```
+Summarise regression model
+```{r}
+fit %>% summary()
+```
+# 5. Probability of "good" by varying total_sulfur_dioxide
+
+Save coefficients
+```{r}
+b0 <- fit$coefficients[1]  # Intercept = 242.76251933
+b1 <- fit$coefficients[2]  # fixed_acidity = 0.27495289
+b2 <- fit$coefficients[3]  # volatile_acidity = -2.58100211
+b3 <- fit$coefficients[4]  # citric_acid = 0.56779433
+b4 <- fit$coefficients[5]  # residual_sugar = 0.23946420
+b5 <- fit$coefficients[6]  # chlorides = -8.81636544
+b6 <- fit$coefficients[7]  # free_sulfur_dioxide = 0.01082060
+b7 <- fit$coefficients[8]  # total_sulfur_dioxide = -0.01653061
+b8 <- fit$coefficients[9]  # density = -257.79757874
+b9 <- fit$coefficients[10]  # pH = 0.22418522
+b10 <- fit$coefficients[11]  # sulphates = 3.74987886
+b11 <- fit$coefficients[12]  # alcohol = 0.75333905
+```
+Fix mean values
+```{r}
+fixed_acidity_mean <- mean(wine$fixed_acidity)
+volatile_acidity_mean <- mean(wine$volatile_acidity)
+citric_acid_mean <- mean(wine$citric_acid)
+residual_sugar_mean <- mean(wine$residual_sugar)
+chlorides_mean <- mean(wine$chlorides)
+free_sulfur_dioxide_mean <- mean(wine$free_sulfur_dioxide)
+total_sulfur_dioxide_mean <- mean(wine$total_sulfur_dioxide)
+density_mean <- mean(wine$density)
+pH_mean <- mean(wine$pH)
+sulphates_mean <- mean(wine$sulphates)
+alcohol_mean <- mean(wine$alcohol)
+```
+Compute range of total_sulfur_dioxide, sulphates, alcohol, volatile_acidity
+```{r}
+total_sulfur_dioxide_range <- seq(from=min(wine$total_sulfur_dioxide), to=max(wine$total_sulfur_dioxide), by=1)
+sulphates_range <- seq(from=min(wine$sulphates), to=max(wine$sulphates), by=0.002)
+alcohol_range <- seq(from=min(wine$alcohol), to=max(wine$alcohol), by=0.05)
+volatile_acidity_range <- seq(from=min(wine$volatile_acidity), to=max(wine$volatile_acidity), by=0.002)
+```
+Calculate Probability of success (total_sulfur_dioxide)
+```{r}
+total_sulfur_dioxide_GOOD <- b0 + b1*fixed_acidity_mean + b2*volatile_acidity_mean +
+  b3*citric_acid_mean + b4*residual_sugar_mean + b5*chlorides_mean + b6*free_sulfur_dioxide_mean +
+  b7*total_sulfur_dioxide_range + b8*density_mean + b9*pH_mean + b10*sulphates_mean + b11*alcohol_mean
+
+sulphates_GOOD <- b0 + b1*fixed_acidity_mean + b2*volatile_acidity_mean +
+  b3*citric_acid_mean + b4*residual_sugar_mean + b5*chlorides_mean + b6*free_sulfur_dioxide_mean +
+  b7*total_sulfur_dioxide_mean + b8*density_mean + b9*pH_mean + b10*sulphates_range + b11*alcohol_mean
+
+alcohol_GOOD <- b0 + b1*fixed_acidity_mean + b2*volatile_acidity_mean +
+  b3*citric_acid_mean + b4*residual_sugar_mean + b5*chlorides_mean + b6*free_sulfur_dioxide_mean +
+  b7*total_sulfur_dioxide_mean + b8*density_mean + b9*pH_mean + b10*sulphates_mean + b11*alcohol_range
+
+volatile_acidity_GOOD <- b0 + b1*fixed_acidity_mean + b2*volatile_acidity_range +
+  b3*citric_acid_mean + b4*residual_sugar_mean + b5*chlorides_mean + b6*free_sulfur_dioxide_mean +
+  b7*total_sulfur_dioxide_mean + b8*density_mean + b9*pH_mean + b10*sulphates_mean + b11*alcohol_mean
+```
+Calculate probabilities
+```{r}
+total_sulfur_dioxide_probs <- exp(total_sulfur_dioxide_GOOD)/(1 + exp(total_sulfur_dioxide_GOOD))
+sulphates_probs <- exp(sulphates_GOOD) / (1 + exp(sulphates_GOOD))
+alcohol_probs <- exp(alcohol_GOOD) / (1 + exp(alcohol_GOOD))
+volatile_acidity_probs <- exp(volatile_acidity_GOOD) / (1 + exp(volatile_acidity_GOOD))
+```
+Plot
+```{r, echo=FALSE}
+par(mfrow=c(2,2))
+plot(total_sulfur_dioxide_range, total_sulfur_dioxide_probs, 
+     ylim=c(0,1),
+     type="l", 
+     lwd=3, 
+     lty=2, 
+     col="gold", 
+     xlab="Total Sulfur Dioxide", ylab="P(conversion)", main="Probability of conversion")
+
+plot(sulphates_range, sulphates_probs, 
+     ylim=c(0,1),
+     type="l", 
+     lwd=3, 
+     lty=2, 
+     col="gold", 
+     xlab="Total Sulphates", ylab="P(conversion)", main="Probability of conversion")
+
+plot(alcohol_range, alcohol_probs, 
+     ylim=c(0,1),
+     type="l", 
+     lwd=3, 
+     lty=2, 
+     col="gold", 
+     xlab="Total Alcohol", ylab="P(conversion)", main="Probability of conversion")
+
+plot(volatile_acidity_range, volatile_acidity_probs, 
+     ylim=c(0,1),
+     type="l", 
+     lwd=3, 
+     lty=2, 
+     col="gold", 
+     xlab="Total Volatile Acidity", ylab="P(conversion)", main="Probability of conversion")
+```
+# 6. Bayesian Logistic Regression
+
+Log posterior distribution
+```{r}
+lpost.LR <- function(beta,x,y){
+  eta <- as.numeric(x %*% beta)
+  logp <- eta - log(1+exp(eta))
+  logq <- log(1-exp(logp))
+  logl <- sum(logp[y==1]) + sum(logq[y==0])
+  lprior <- sum(dnorm(beta,0,10,log=T))
+  return(logl + lprior)
+}
+```
+Start with smaller model of *** significance
+```{r}
+fit <- glm(
+  good ~ volatile_acidity + total_sulfur_dioxide + sulphates + alcohol,
+  data = wine,
+  family = binomial(link="logit")
+)
+fit$coefficients
+```
+Set seed for reproducible results
+```{r}
+set.seed(1234)
+```
+Number of simulations
+```{r}
+S <- 10^4
+```
+Testing with significance ***
+```{r}
+X=cbind(rep(1,nrow(wine)), wine$volatile_acidity, wine$total_sulfur_dioxide,
+         wine$sulphates, wine$alcohol)
+```
+Choose 4 different initialisations for the coefficients
+
+```{r}
+init <- matrix(data=c(runif(20, min = 100, max = 200)), nrow=4, ncol=5, byrow = T)
+init
+```
+
+Run a Metropolis-Hastings algorithm
+```{r}
+# Initialise
+
+y <- wine$good[1]
+
+beta_mat_init1 <- matrix(NA,nrow=S,ncol=ncol(X))
+k <- ncol(beta_mat_init1)
+beta_mat_init1[1,] <- init[1,]
+acc <- 0
+for(iter in 2:S){
+  beta_star <- rnorm(k,beta_mat_init1[iter-1,], 5)
+  newpost=lpost.LR(beta_star,X,y)
+  oldpost=lpost.LR(beta_mat_init1[iter-1,],X,y)
+  if(runif(1,0,1)>exp(newpost-oldpost)){
+    beta_mat_init1[iter,]=beta_mat_init1[iter-1,]
+  } else{
+    beta_mat_init1[iter,]=beta_star
+    acc=acc+1
+  }
+  if(iter%%1000==0){print(c(iter,acc/iter))}
+}
+
+beta_mat_init2 <- matrix(NA,nrow=S,ncol=ncol(X))
+beta_mat_init2[1,] <- init[2,]
+acc <- 0
+for(iter in 2:S){
+  beta_star <- rnorm(k,beta_mat_init2[iter-1,], 5)
+  newpost=lpost.LR(beta_star,X,y)
+  oldpost=lpost.LR(beta_mat_init2[iter-1,],X,y)
+  if(runif(1,0,1)>exp(newpost-oldpost)){
+    beta_mat_init2[iter,]=beta_mat_init2[iter-1,]
+  } else{
+    beta_mat_init2[iter,]=beta_star
+    acc=acc+1
+  }
+  if(iter%%1000==0){print(c(iter,acc/iter))}
+}
+
+beta_mat_init3 <- matrix(NA,nrow=S,ncol=ncol(X))
+beta_mat_init3[1,] <- init[3,]
+acc <- 0
+for(iter in 2:S){
+  beta_star <- rnorm(k,beta_mat_init3[iter-1,], 5)
+  newpost=lpost.LR(beta_star,X,y)
+  oldpost=lpost.LR(beta_mat_init3[iter-1,],X,y)
+  if(runif(1,0,1)>exp(newpost-oldpost)){
+    beta_mat_init3[iter,]=beta_mat_init3[iter-1,]
+  } else{
+    beta_mat_init3[iter,]=beta_star
+    acc=acc+1
+  }
+  if(iter%%1000==0){print(c(iter,acc/iter))}
+}
+
+beta_mat_init4 <- matrix(NA,nrow=S,ncol=ncol(X))
+beta_mat_init4[1,] <- init[4,]
+acc <- 0
+for(iter in 2:S){
+  beta_star <- rnorm(k,beta_mat_init4[iter-1,], 5)
+  newpost=lpost.LR(beta_star,X,y)
+  oldpost=lpost.LR(beta_mat_init4[iter-1,],X,y)
+  if(runif(1,0,1)>exp(newpost-oldpost)){
+    beta_mat_init4[iter,]=beta_mat_init4[iter-1,]
+  } else{
+    beta_mat_init4[iter,]=beta_star
+    acc=acc+1
+  }
+  if(iter%%1000==0){print(c(iter,acc/iter))}
+}
+
+```
+
+Plot the chains for each coefficient (same plot)
+```{r, echo=FALSE}
+
+par(mfrow=c(3,2))
+for(i in 1:5){
+  plot(beta_mat_init1[,i], type="l", col="magenta")
+  lines(beta_mat_init2[,i], type="l", col="green")
+  lines(beta_mat_init3[,i], type="l", col="red")
+  lines(beta_mat_init4[,i], type="l", col="blue")
+  abline(h=fit$coefficients[i],col="red",lty=2)
+}
+fit$coefficients
+```
+Acceptance probability
+```{r}
+acc/iter
+```
+# 7. Posterior Predictive Distribution
+```{r}
+fixed_acidity <- 7.5
+volatile_acidity <- 0.6
+citric_acid <- 0.0
+residual_sugar <- 1.7
+chlorides <- 0.085
+free_sulfur_dioxide <- 5
+total_sulfur_dioxide <- 45
+density <- 0.9965
+pH <- 3.4
+sulphates <- 0.63
+alcohol <- 12
+```
+
+```{r}
+beta_mat2 <- matrix(NA,nrow=S,ncol=ncol(X))
+beta_mat2[1,] <- as.numeric(coefficients(fit))
+
+y_new <- c(1)
+x_new <- c(1, 5, 0.63, 12, 0.6)
+
+library(mvtnorm)
+
+# prediction
+
+Omega_prop <- solve(t(X) %*% X)
+k <- ncol(beta_mat2)
+acc <- 0
+for(iter in 2:S)
+{
+  # 1. Propose a new set of values
+  beta_star <- rmvnorm(1,beta_mat2[iter-1,],0.5*Omega_prop)
+  
+  # 2. Compute the posterior density on the proposed value and on the old value  
+  newpost=lpost.LR(t(beta_star),X,y)
+  oldpost=lpost.LR(matrix(beta_mat2[iter-1,],ncol=1),X,y)
+  
+  # 3. Acceptance step
+  if(runif(1,0,1)>exp(newpost-oldpost)){
+    beta_mat2[iter,]=beta_mat2[iter-1,]
+  } else{
+    beta_mat2[iter,]=beta_star
+    acc=acc+1
+  }
+  # 4. Print the stage of the chain
+  if(iter%%1000==0){print(c(iter,acc/iter))}
+  
+  # 5. Prediction 
+  p_new <- exp(sum(beta_mat2[iter,] * x_new) ) / (1 + exp(sum(beta_mat2[iter,] * x_new) ))
+  y_new[iter] <- rbinom(1,1,prob=p_new)
+}
+```
+```{r}
+par(mfrow=c(3,2))
+plot(beta_mat2[,1],type="l", ylab=expression(beta[0]))
+abline(h=fit$coefficients[1],col="red",lty=2)
+plot(beta_mat2[,2],type="l", ylab=expression(beta[1]))
+abline(h=fit$coefficients[2],col="red",lty=2)
+plot(beta_mat2[,3],type="l", ylab=expression(beta[2]))
+abline(h=fit$coefficients[3],col="red",lty=2)
+plot(beta_mat2[,4],type="l", ylab=expression(beta[3]))
+abline(h=fit$coefficients[4],col="red",lty=2)
+plot(beta_mat2[,5],type="l", ylab=expression(beta[4]))
+abline(h=fit$coefficients[5],col="red",lty=2)
+```
+
+```{r}
+par(mfrow=c(3,2))
+plot(beta_mat2[2000:10000,1],type="l", ylab=expression(beta[0]))
+abline(h=fit$coefficients[1],col="red",lty=2)
+plot(beta_mat2[2000:10000,2],type="l", ylab=expression(beta[1]))
+abline(h=fit$coefficients[2],col="red",lty=2)
+plot(beta_mat2[2000:10000,3],type="l", ylab=expression(beta[2]))
+abline(h=fit$coefficients[3],col="red",lty=2)
+plot(beta_mat2[2000:10000,4],type="l", ylab=expression(beta[3]))
+abline(h=fit$coefficients[4],col="red",lty=2)
+plot(beta_mat2[2000:10000,5],type="l", ylab=expression(beta[4]))
+abline(h=fit$coefficients[5],col="red",lty=2)
+```
+
+```{r}
+table(y_new[2000:10000])
+```
+
+
+
+
+# 8. metrop() analysis of Q6
+
+
+
+```{r}
+library(mcmc)
+out <- glm(wine$quality ~ wine$volatile_acidity + wine$total_sulfur_dioxide + wine$sulphates + wine$alcohol, data=wine, family=binomial, x=TRUE)
+summary(out)
+
+```
+
+```{r}
+lupost_factory <- function(x, y) function(beta) {
+  eta <- as.numeric(x %*% beta)
+  logp <- ifelse(eta < 0, eta - log1p(exp(eta)), - log1p(exp(- eta)))
+  logq <- ifelse(eta < 0, - log1p(exp(eta)), - eta - log1p(exp(- eta)))
+  logl <- sum(logp[y == 1]) + sum(logq[y == 0])
+  return(logl - sum(beta^2) / 8)
+}
+lupost <- lupost_factory(out$x, out$y)
+```
+
+
+```{r}
+set.seed(1234)
+beta.init <- as.numeric(fit$coefficients)
+out <- metrop(lupost, beta.init, 1e3)
+lupost <- lpost.LR(beta.init, X, y)
+
+names(out)
+```
+
+
+```{r}
+out$accept
+```
+```{r}
+out <- metrop(out, scale = 0.1)
+out$accept
+```
+```{r}
+out <- metrop(out, scale = 0.3)
+out$accept
+```
+
+```{r}
+out <- metrop(out, scale = 0.05)
+out$accept
+```
+
+```{r}
+out <- metrop(out, scale = 0.01)
+out$accept
+```
+
+```{r}
+out <- metrop(out, scale = 0.04)
+out$accept
+```
+
+
+```{r}
+out <- metrop(out, nbatch = 1e4)
+t.test(out$accept.batch)$conf.int
+```
+
+```{r}
+out$time
+```
+
+
+```{r}
+plot(ts(out$batch))
+```
+
+
+```{r}
+acf(out$batch)
+```
+
