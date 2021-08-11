@@ -3,8 +3,8 @@ title: "Assessment_3"
 author: "ABD"
 date: "8/9/2021"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 ```{r}
 # Clear environment ####
@@ -28,6 +28,10 @@ pacman::p_load(pacman, rio, tidyverse, GGally, magrittr, broom, skimr)  #party,
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+# 1. Introduction
+This dataset is related to red variants of the Portuguese "Vinho Verde" wine. The dataset is described in the publication by Cortez, P., Cerdeira, A., Almeida, F., Matos, T., & Reis, J. (2009). [Modeling wine preferences by data mining from physicochemical properties.](https://www.sciencedirect.com/science/article/pii/S0167923609001377?casa_token=3l0RostJJXAAAAAA:QC5SBNWeoP2No8AVCA8EMu4R9yLCBh5gyZvsEMEVT1DxrzPwybfUyU0fWb8u4sqeqSyIUQBuIQI)
+
+
 # 2. Import data. 
 ```{r}
 wine <- read.csv("winequality-red.csv")
@@ -36,7 +40,8 @@ Check for missing values
 ```{r}
 any(is.na(wine))
 ```
-# 3. Good wine > 6
+# 3. Classify wines
+We want to implement a logistic regression, therefore we want a response variable which assumes values either 0 or 1. Suppose we consider "good" a wine with quality above 6.5 (included).
 ```{r}
  wine %<>%
   mutate(good = ifelse(quality > 6, 1, 0)) %>%
@@ -58,7 +63,7 @@ str(wine)
 ```
 # 4. Frequentist Logistic Regression
 
-Compute model (glm())
+The logistic model is computed using the generalised linear model (glm) with `good` being a function of all other regressors except `quality` and `drinkable`.
 
 ```{r}
 fit <- glm(
@@ -67,13 +72,16 @@ fit <- glm(
   family = binomial(link="logit")
 )
 ```
-Summarise regression model
+The significant coefficients are labelled in the last column of the summary() function.  Most significant coefficients are `sulphates`, `alcohol`, `volatile_acidity`, and `total_sulfur_dioxide` in order of their probability being greater than the absolute calculated z value.
 ```{r}
 fit %>% summary()
 ```
-# 5. Probability of "good" by varying total_sulfur_dioxide
+# 5. Impact on outcome by varying total_sulfur_dioxide
+By fixing all coefficients and varying one, we can see the impact of one particular coefficient has on the probabilistic outcome of the logistic regression. 
 
-Save coefficients
+As a comparison I have fixed all significant coefficients in turn (`volatile_acidity`, `sulphates` and `alcohol`)
+
+First, we save coefficients to their own variable.
 ```{r}
 b0 <- fit$coefficients[1]  # Intercept = 242.76251933
 b1 <- fit$coefficients[2]  # fixed_acidity = 0.27495289
@@ -88,7 +96,7 @@ b9 <- fit$coefficients[10]  # pH = 0.22418522
 b10 <- fit$coefficients[11]  # sulphates = 3.74987886
 b11 <- fit$coefficients[12]  # alcohol = 0.75333905
 ```
-Fix mean values
+Then save each individual mean values
 ```{r}
 fixed_acidity_mean <- mean(wine$fixed_acidity)
 volatile_acidity_mean <- mean(wine$volatile_acidity)
@@ -102,14 +110,14 @@ pH_mean <- mean(wine$pH)
 sulphates_mean <- mean(wine$sulphates)
 alcohol_mean <- mean(wine$alcohol)
 ```
-Compute range of total_sulfur_dioxide, sulphates, alcohol, volatile_acidity
+Compute the range of each significant coefficient, `total_sulfur_dioxide`, `sulphates`, `alcohol`, and `volatile_acidity`
 ```{r}
 total_sulfur_dioxide_range <- seq(from=min(wine$total_sulfur_dioxide), to=max(wine$total_sulfur_dioxide), by=1)
 sulphates_range <- seq(from=min(wine$sulphates), to=max(wine$sulphates), by=0.002)
 alcohol_range <- seq(from=min(wine$alcohol), to=max(wine$alcohol), by=0.05)
 volatile_acidity_range <- seq(from=min(wine$volatile_acidity), to=max(wine$volatile_acidity), by=0.002)
 ```
-Calculate Probability of success (total_sulfur_dioxide)
+Calculate for each significant coefficient
 ```{r}
 total_sulfur_dioxide_GOOD <- b0 + b1*fixed_acidity_mean + b2*volatile_acidity_mean +
   b3*citric_acid_mean + b4*residual_sugar_mean + b5*chlorides_mean + b6*free_sulfur_dioxide_mean +
@@ -127,7 +135,7 @@ volatile_acidity_GOOD <- b0 + b1*fixed_acidity_mean + b2*volatile_acidity_range 
   b3*citric_acid_mean + b4*residual_sugar_mean + b5*chlorides_mean + b6*free_sulfur_dioxide_mean +
   b7*total_sulfur_dioxide_mean + b8*density_mean + b9*pH_mean + b10*sulphates_mean + b11*alcohol_mean
 ```
-Calculate probabilities
+Calculate logistic probabilities for each
 ```{r}
 total_sulfur_dioxide_probs <- exp(total_sulfur_dioxide_GOOD)/(1 + exp(total_sulfur_dioxide_GOOD))
 sulphates_probs <- exp(sulphates_GOOD) / (1 + exp(sulphates_GOOD))
