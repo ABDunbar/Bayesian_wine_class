@@ -29,7 +29,9 @@ pacman::p_load(pacman, rio, tidyverse, GGally, magrittr, broom, skimr)  #party,
 knitr::opts_chunk$set(echo = TRUE)
 ```
 # 1. Introduction
-This dataset is related to red variants of the Portuguese "Vinho Verde" wine. The dataset is described in the publication by Cortez, P., Cerdeira, A., Almeida, F., Matos, T., & Reis, J. (2009). [Modeling wine preferences by data mining from physicochemical properties.](https://www.sciencedirect.com/science/article/pii/S0167923609001377?casa_token=3l0RostJJXAAAAAA:QC5SBNWeoP2No8AVCA8EMu4R9yLCBh5gyZvsEMEVT1DxrzPwybfUyU0fWb8u4sqeqSyIUQBuIQI)
+This dataset is related to red variants of the Portuguese "Vinho Verde" wine. The dataset is described in the publication by Cortez, P., Cerdeira, A., Almeida, F., Matos, T., & Reis, J. (2009). [Modeling wine preferences by data mining from physicochemical properties.](https://www.sciencedirect.com/science/article/pii/S0167923609001377?casa_token=3l0RostJJXAAAAAA:QC5SBNWeoP2No8AVCA8EMu4R9yLCBh5gyZvsEMEVT1DxrzPwybfUyU0fWb8u4sqeqSyIUQBuIQI).
+
+
 
 
 # 2. Import data. 
@@ -163,6 +165,16 @@ plot(volatile_acidity_range, volatile_acidity_probs,
 ```
 # 6. Bayesian Logistic Regression
 
+The following is a Bayesian logistic regression analysis. 
+
+## Likelihood.
+The likelihood function for the logistic regression model is defined as the product of binomial likelihoods with the probability of success, p, being the log-odds.
+$$ L(\beta; y, x) = \prod_{i=1}^n \bigg(\frac{\text{exp}(x_i \beta)}{1 + \text{exp}(x_i \beta)}\bigg)^{y_i}\bigg(1- \frac{\text{exp}(x_i \beta)}{1 + \text{exp}(x_i \beta)}\bigg)^{1-y_i} $$
+## Log-likelihood
+$$ \log L (\beta; y, x) = \sum_{i=1}^n y_i(x_i \beta) - \log [1 + \text{exp}(x_i \beta)] $$
+## Prior
+Independent normal prior distributions for each $\beta_j, j=0,1,\dots,k$, such that $\beta_j \sim N(0, 100)$
+
 ## Log posterior distribution
 
 To perform a Bayesian analysis via Metropolis-Hastings algorithm we write a function defining the target distribution of the Beta coefficients.  We work in terms of log posterior to avoid numerical problems with computer computation.
@@ -182,7 +194,7 @@ lpost.LR <- function(beta, x, y) {
   logq <- log(1 - exp(logp))
   # sum of both contributions: when y=1 + when y=0
   logl <- sum(logp[y==1]) + sum(logq[y==0])
-  # log prior: normal indep prior dists
+  # log prior: normal indep prior dists $N(0, 100)$
   lprior <- sum(dnorm(beta, 0, 10,log = T))
   # return log posterior (likelihood + prior)
   return(logl + lprior)
