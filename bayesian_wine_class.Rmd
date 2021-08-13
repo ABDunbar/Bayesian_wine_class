@@ -3,8 +3,8 @@ title: "Bayesian Logistic Regression"
 author: "Alex B.Dunbar"
 date: "8/9/2021"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 Clear environment, graphics and console
@@ -205,6 +205,7 @@ plot(volatile_acidity_range, volatile_acidity_probs,
      ylim=c(0,1), type="l", lwd=3, lty=2, col="gold", 
      xlab="Total Volatile Acidity", ylab="P(conversion)", main="Probability of conversion")
 ```
+
 # 6. Bayesian Logistic Regression
 
 The following is a Bayesian logistic regression analysis. 
@@ -236,7 +237,7 @@ lpost.LR <- function(beta, x, y) {
   # sum of both contributions: when y=1 + when y=0
   logl <- sum(logp[y==1]) + sum(logq[y==0])
   # log prior: normal indep prior dists $N(0, 100)$
-  lprior <- sum(dnorm(beta, 0, 10,log = T))
+  lprior <- sum(dnorm(beta, 0, 10,log = T))  # 10: mixed, 50 var, 100 large var, 20 like 10, 5 low
   # return log posterior (likelihood + prior)
   return(logl + lprior)
 }
@@ -274,7 +275,7 @@ y <- wine$good[1]
 The first initialisation contains the MLE estimates for each coefficient. The remaining three initialisations are randomly selected values between 500 and 1000 from the uniform distribution $runif(48, 500, 1000)$.
 ```{r}
 # init <- matrix(data=c(runif(20, min = 100, max = 200)), nrow=4, ncol=5, byrow = T)  # for testing
-init <- matrix(data=c(runif(48, min = 500, max = 1000)), nrow=4, ncol=12, byrow = T)
+init <- matrix(data=c(runif(48, min = 100, max = 200)), nrow=4, ncol=12, byrow = T)
 ```
 ## Run a Metropolis-Hastings algorithm
 ```{r}
@@ -402,6 +403,26 @@ lines(beta_mat_init3[,6], type="l", col="red")
 lines(beta_mat_init4[,6], type="l", col="blue")
 abline(h=fit$coefficients[6],col="red",lty=2)
 ```
+## Comment
+
+* varied standard deviation of the prior in the posterior distribution function (0.5, 1, 5, 10, 20, 50)
+* varied standard deviation of the Metropolis-Hastings algorithm (0.5, 1, 5, 10, 20, 50)
+* varied the random initialised values (+/- 100, 0-1, 0-10, 0-100, 10-100, 100-200, 500-1000)
+```{r}
+fit$coefficients[1:6]
+```
+
+$\beta_0$ (`Intercept`: 242.7625): No convergence with MLE.  All four chains do converge to a value around zero.
+
+$\beta_1$ (`fixed_acidity`: 0.275): First chain containing MLE converges to a value close but slightly under the coefficient.  The other three chains containing random initialisations converge to a value approximately 20-30.
+
+$\beta_2$ (`volative_acidity`: -2.581): All four chains converge to a value close to the coefficient.
+
+$\beta_3$ (`citric_acid`: 0.568): All four chains converge to a value close to the coefficient.
+
+$\beta_4$ (`residual_sugar`: 0.239): All four chains converge to a value close to the coefficient.
+
+$\beta_5$ (`chlorides`: -8.816): All four chains converge to a value close to the coefficient.
 
 ```{r}
 par(mfrow=c(3,2))
@@ -442,7 +463,22 @@ lines(beta_mat_init3[,12], type="l", col="red")
 lines(beta_mat_init4[,12], type="l", col="blue")
 abline(h=fit$coefficients[12],col="red",lty=2)
 ```
-## COMMENT
+## Comment
+```{r}
+fit$coefficients[7:12]
+```
+
+$\beta_6$ (`free_sulfur_dioxide`: 0.011): First chain containing MLE converges to a value close but slightly under the coefficient.  The other three chains containing random initialisations converge to a value approximately 20-30.
+
+$\beta_7$ (`total_sulfur_dioxide`: -0.017): First chain converges to a value just below coefficient but chains 2-4 don't converge to coefficient.
+
+$\beta_8$ (`density`: -257.798): First chain converges to a value at about the coefficient but chains 2-4 converge to a value slightly above the coefficient
+
+$\beta_9$ (`pH`: 0.224): All four chains converge to a value close to the coefficient.
+
+$\beta_{10}$ (`sulphates`: 3.750): All four chains converge to a value close to the coefficient.
+
+$\beta_{11}$ (`alcohol`: 0.753): First chain converges to a value at about the coefficient but chains 2-4 converge to a value above the coefficient
 
 
 # 7. Posterior Predictive Distribution
