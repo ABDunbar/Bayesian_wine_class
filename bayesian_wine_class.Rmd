@@ -1,11 +1,13 @@
 ---
-title: "Assessment_3"
-author: "ABD"
+title: "Bayesian Logistic Regression"
+author: "Alex B.Dunbar"
 date: "8/9/2021"
 output:
   html_document: default
   pdf_document: default
 ---
+
+Clear environment, graphics and console
 ```{r}
 # Clear environment ####
 rm(list = ls()) 
@@ -16,6 +18,7 @@ graphics.off()  # Clears plots, closes all graphics devices
 # Clear console
 cat("\014")  # ctrl+L
 ```
+Install required packages
 ```{r include=FALSE}
 # Install pacman ("package manager") if needed
 if (!require("pacman")) install.packages("pacman")
@@ -29,43 +32,46 @@ pacman::p_load(pacman, rio, tidyverse, GGally, magrittr, broom, skimr)  #party,
 knitr::opts_chunk$set(echo = TRUE)
 ```
 # 1. Introduction
-This dataset is related to red variants of the Portuguese "Vinho Verde" wine. The dataset is described in the publication by Cortez, P., Cerdeira, A., Almeida, F., Matos, T., & Reis, J. (2009). [Modeling wine preferences by data mining from physicochemical properties.](https://www.sciencedirect.com/science/article/pii/S0167923609001377?casa_token=3l0RostJJXAAAAAA:QC5SBNWeoP2No8AVCA8EMu4R9yLCBh5gyZvsEMEVT1DxrzPwybfUyU0fWb8u4sqeqSyIUQBuIQI).
+This is a Bayesian logistic regression related to red variants of the Portuguese "Vinho Verde" wine.  There are 11 input variables (covariates) based on physiochemical tests.  The output variable is `quality` and is a score between 0 and 10 which is based on sensory data.
 
 
-
-
-# 2. Import data. 
+# 2. Import data.
+The dataset is described in the publication by Cortez, P., Cerdeira, A., Almeida, F., Matos, T., & Reis, J. (2009). [Modeling wine preferences by data mining from physicochemical properties.](https://www.sciencedirect.com/science/article/pii/S0167923609001377?casa_token=3l0RostJJXAAAAAA:QC5SBNWeoP2No8AVCA8EMu4R9yLCBh5gyZvsEMEVT1DxrzPwybfUyU0fWb8u4sqeqSyIUQBuIQI).
 ```{r}
 wine <- read.csv("winequality-red.csv")
+head(wine)
 ```
-Check for missing values
+## Check for missing values
+There are no `NA` values in the dataset.
 ```{r}
 any(is.na(wine))
 ```
-# 3. Classify wines
+# 3. Classify "good" wines
 We want to implement a logistic regression, therefore we want a response variable which assumes values either 0 or 1. Suppose we consider "good" a wine with quality above 6.5 (included).
+
+We add a column called `good` that is `1` if the `quality` is greater than 6.5 and `0` if `quality` is less than 6.5.
+
+We also add a column of strings called `drinkable`, relating 1 and 0 to "good" and "bad" as appropriate.
 ```{r}
  wine %<>%
   mutate(good = ifelse(quality > 6, 1, 0)) %>%
   mutate(drinkable = ifelse(quality > 6, "good", "bad")) %>%
   mutate(quality = factor(quality, levels=1:10))
 ```
-
-Remove spaces from names
+Remove spaces from names to make references easier.
 ```{r}
-
 colnames(wine) <- c("fixed_acidity", "volatile_acidity", "citric_acid",
                       "residual_sugar", "chlorides", "free_sulfur_dioxide",
                       "total_sulfur_dioxide", "density", "pH", "sulphates",
                       "alcohol", "quality", "good", "drinkable")
 ```
-Structure of dataset
+The structure of the dataset, `str(wine)`, will confirm that there are no `NA` values, the feature names, the feature type (num, Factor, chr) and the first 10 values.
 ```{r}
 str(wine)
 ```
 # 4. Frequentist Logistic Regression
 
-The logistic model is computed using the generalised linear model (glm) with `good` being a function of all other regressors except `quality` and `drinkable`.
+The logistic model is computed using the generalised linear model (glm) with `good` being a function of all other covariates except `quality` and `drinkable`.
 
 ```{r}
 fit <- glm(
@@ -74,14 +80,21 @@ fit <- glm(
   family = binomial(link="logit")
 )
 ```
-The significant coefficients are labelled in the last column of the summary() function.  Most significant coefficients are `sulphates`, `alcohol`, `volatile_acidity`, and `total_sulfur_dioxide` in order of their probability being greater than the absolute calculated z value.
+## Significant coefficients
+The significant coefficients are labelled in the last column of the summary() function.  Most significant coefficients are:
+
+* `sulphates` (Pr($\alpha$ > 6.924 = 4.39e-12)),
+* `alcohol`(Pr($\alpha$ > 5.724 = 1.04e-08)),
+* `volatile_acidity` (Pr($\alpha$ > |-3.291| = 9.99e-4)), and
+* `total_sulfur_dioxide` (Pr($\alpha$ > |-3.378| = 7.31e-4))
+
 ```{r}
 fit %>% summary()
 ```
 # 5. Impact on outcome by varying total_sulfur_dioxide
 By fixing all coefficients and varying one, we can see the impact of one particular coefficient has on the probabilistic outcome of the logistic regression. 
 
-As a comparison I have fixed all significant coefficients in turn (`volatile_acidity`, `sulphates` and `alcohol`)
+As a comparison I have fixed all significant coefficients in turn (`total_sulfur_dioxide`, `volatile_acidity`, `sulphates` and `alcohol`)
 
 First, we save coefficients to their own variable.
 ```{r}
@@ -119,7 +132,16 @@ sulphates_range <- seq(from=min(wine$sulphates), to=max(wine$sulphates), by=0.00
 alcohol_range <- seq(from=min(wine$alcohol), to=max(wine$alcohol), by=0.05)
 volatile_acidity_range <- seq(from=min(wine$volatile_acidity), to=max(wine$volatile_acidity), by=0.002)
 ```
-Calculate for each significant coefficient
+Plot of the range histogram of each of the four most significant covariates.
+```{r}
+par(mfrow=c(2,2))
+hist(total_sulfur_dioxide_range)
+hist(sulphates_range)
+hist(alcohol_range)
+hist(volatile_acidity_range)
+```
+
+Calculate probabilities for each significant coefficient
 ```{r}
 total_sulfur_dioxide_GOOD <- b0 + b1*fixed_acidity_mean + b2*volatile_acidity_mean +
   b3*citric_acid_mean + b4*residual_sugar_mean + b5*chlorides_mean + b6*free_sulfur_dioxide_mean +
@@ -137,6 +159,15 @@ volatile_acidity_GOOD <- b0 + b1*fixed_acidity_mean + b2*volatile_acidity_range 
   b3*citric_acid_mean + b4*residual_sugar_mean + b5*chlorides_mean + b6*free_sulfur_dioxide_mean +
   b7*total_sulfur_dioxide_mean + b8*density_mean + b9*pH_mean + b10*sulphates_mean + b11*alcohol_mean
 ```
+Histograms of what????
+```{r}
+par(mfrow=c(2,2))
+hist(total_sulfur_dioxide_GOOD)
+hist(sulphates_GOOD)
+hist(alcohol_GOOD)
+hist(volatile_acidity_GOOD)
+```
+
 Calculate logistic probabilities for each
 ```{r}
 total_sulfur_dioxide_probs <- exp(total_sulfur_dioxide_GOOD)/(1 + exp(total_sulfur_dioxide_GOOD))
@@ -144,7 +175,18 @@ sulphates_probs <- exp(sulphates_GOOD) / (1 + exp(sulphates_GOOD))
 alcohol_probs <- exp(alcohol_GOOD) / (1 + exp(alcohol_GOOD))
 volatile_acidity_probs <- exp(volatile_acidity_GOOD) / (1 + exp(volatile_acidity_GOOD))
 ```
-Plot
+Plot logistic probabilities
+```{r}
+par(mfrow=c(2,2))
+hist(total_sulfur_dioxide_probs)
+hist(sulphates_probs)
+hist(alcohol_probs)
+hist(volatile_acidity_probs)
+```
+
+## Plot the results.
+
+The plots of each of the four covariates are the probabilities across the range of 
 ```{r, echo=FALSE}
 par(mfrow=c(2,2))
 plot(total_sulfur_dioxide_range, total_sulfur_dioxide_probs, 
@@ -167,19 +209,18 @@ plot(volatile_acidity_range, volatile_acidity_probs,
 
 The following is a Bayesian logistic regression analysis. 
 
+To perform a Bayesian analysis via Metropolis-Hastings algorithm we write a function defining the target distribution of the Beta coefficients.  We work in terms of log posterior to avoid numerical problems with computer computation.
+
 ## Likelihood.
-The likelihood function for the logistic regression model is defined as the product of binomial likelihoods with the probability of success, p, being the log-odds.
+The likelihood is a product of Bernoulli likelihoods for each combination of covariate and response variable for the i-th term.
 $$ L(\beta; y, x) = \prod_{i=1}^n \bigg(\frac{\text{exp}(x_i \beta)}{1 + \text{exp}(x_i \beta)}\bigg)^{y_i}\bigg(1- \frac{\text{exp}(x_i \beta)}{1 + \text{exp}(x_i \beta)}\bigg)^{1-y_i} $$
 ## Log-likelihood
 $$ \log L (\beta; y, x) = \sum_{i=1}^n y_i(x_i \beta) - \log [1 + \text{exp}(x_i \beta)] $$
+
 ## Prior
 Independent normal prior distributions for each $\beta_j, j=0,1,\dots,k$, such that $\beta_j \sim N(0, 100)$
 
 ## Log posterior distribution
-
-To perform a Bayesian analysis via Metropolis-Hastings algorithm we write a function defining the target distribution of the Beta coefficients.  We work in terms of log posterior to avoid numerical problems with computer computation.
-
-The likelihood is a product of Bernoulli (likelihoods) for each combination of covariate and response variable for the i-th term.
 ```{r}
 lpost.LR <- function(beta, x, y) {
   # beta: vector of coefficients
@@ -200,8 +241,6 @@ lpost.LR <- function(beta, x, y) {
   return(logl + lprior)
 }
 ```
-## Maximum likelihood estimates for each coefficient
-
 The MLE for each coefficient can be used to initialise the simulation matrix
 ```{r}
 fit <- glm(
@@ -215,7 +254,7 @@ Set seed for reproducible results
 ```{r}
 set.seed(1234)
 ```
-Number of simulations
+## Number of simulations
 ```{r}
 S <- 10^4
 ```
@@ -230,12 +269,14 @@ X = cbind(rep(1, nrow(wine)), wine$fixed_acidity, wine$volatile_acidity, wine$ci
 
 y <- wine$good[1]
 ```
-Choose 4 different initialisations for the coefficients
+## Initialisations for the coefficients
+
+The first initialisation contains the MLE estimates for each coefficient. The remaining three initialisations are randomly selected values between 500 and 1000 from the uniform distribution $runif(48, 500, 1000)$.
 ```{r}
 # init <- matrix(data=c(runif(20, min = 100, max = 200)), nrow=4, ncol=5, byrow = T)  # for testing
 init <- matrix(data=c(runif(48, min = 500, max = 1000)), nrow=4, ncol=12, byrow = T)
 ```
-Run a Metropolis-Hastings algorithm
+## Run a Metropolis-Hastings algorithm
 ```{r}
 # First initialisation
 beta_mat_init1 <- matrix(NA, nrow = S, ncol = ncol(X))
@@ -324,11 +365,6 @@ print(c(iter, acc/iter))
 Plot the chains for each coefficient (same plot)
 
 ```{r}
-fit$coefficients
-```
-
-
-```{r}
 par(mfrow=c(3,2))
 plot(beta_mat_init1[,1], type="l", col="magenta", ylab=expression(beta[0]))
 lines(beta_mat_init2[,1], type="l", col="green")
@@ -406,8 +442,11 @@ lines(beta_mat_init3[,12], type="l", col="red")
 lines(beta_mat_init4[,12], type="l", col="blue")
 abline(h=fit$coefficients[12],col="red",lty=2)
 ```
+## COMMENT
+
 
 # 7. Posterior Predictive Distribution
+Approximate the posterior predictive distribution of an unobserved variable characterised by the following values for each covariate:
 ```{r}
 fixed_acidity <- 7.5
 volatile_acidity <- 0.6
@@ -438,8 +477,6 @@ x_new <- c(1, fixed_acidity, volatile_acidity, citric_acid, residual_sugar,
 new model
 ```{r}
 library(mvtnorm)
-
-
 
 # prediction
 
@@ -589,5 +626,5 @@ abline(h=fit$coefficients[11],col="red",lty=2)
 plot(ts(out$batch)[,12], ylab=expression(beta[5]))
 abline(h=fit$coefficients[12],col="red",lty=2)
 ```
-
+## VISUAL COMPARISON
 
