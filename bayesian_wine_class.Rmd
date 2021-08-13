@@ -3,8 +3,8 @@ title: "Bayesian Logistic Regression"
 author: "Alex B.Dunbar"
 date: "8/9/2021"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 Clear environment, graphics and console
