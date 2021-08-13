@@ -163,18 +163,34 @@ plot(volatile_acidity_range, volatile_acidity_probs,
 ```
 # 6. Bayesian Logistic Regression
 
-Log posterior distribution
+## Log posterior distribution
+
+To perform a Bayesian analysis via Metropolis-Hastings algorithm we write a function defining the target distribution of the Beta coefficients.  We work in terms of log posterior to avoid numerical problems with computer computation.
+
+The likelihood is a product of Bernoulli (likelihoods) for each combination of covariate and response variable for the i-th term.
 ```{r}
-lpost.LR <- function(beta,x,y){
+lpost.LR <- function(beta, x, y) {
+  # beta: vector of coefficients
+  # x: covariates (regressors)
+  # y: response variable
+  
+  # eta is the matrix product of the covariates and the coefficients
   eta <- as.numeric(x %*% beta)
-  logp <- eta - log(1+exp(eta))
-  logq <- log(1-exp(logp))
+  # logp: y=1, in terms of logistic function
+  logp <- eta - log(1 + exp(eta))  # in log scale
+  # logq: y=0, expressed in terms of logistic function
+  logq <- log(1 - exp(logp))
+  # sum of both contributions: when y=1 + when y=0
   logl <- sum(logp[y==1]) + sum(logq[y==0])
-  lprior <- sum(dnorm(beta,0,10,log=T))
+  # log prior: normal indep prior dists
+  lprior <- sum(dnorm(beta, 0, 10,log = T))
+  # return log posterior (likelihood + prior)
   return(logl + lprior)
 }
 ```
-Model
+## Maximum likelihood estimates for each coefficient
+
+The MLE for each coefficient can be used to initialise the simulation matrix
 ```{r}
 fit <- glm(
   #good ~ volatile_acidity + total_sulfur_dioxide + sulphates + alcohol,  # test model
@@ -182,7 +198,6 @@ fit <- glm(
   data = wine,
   family = binomial(link="logit")
 )
-fit$coefficients
 ```
 Set seed for reproducible results
 ```{r}
@@ -206,30 +221,39 @@ y <- wine$good[1]
 Choose 4 different initialisations for the coefficients
 ```{r}
 # init <- matrix(data=c(runif(20, min = 100, max = 200)), nrow=4, ncol=5, byrow = T)  # for testing
-init <- matrix(data=c(runif(48, min = 100, max = 200)), nrow=4, ncol=12, byrow = T)
+init <- matrix(data=c(runif(48, min = 500, max = 1000)), nrow=4, ncol=12, byrow = T)
 ```
 Run a Metropolis-Hastings algorithm
 ```{r}
 # First initialisation
 beta_mat_init1 <- matrix(NA, nrow = S, ncol = ncol(X))
 k <- ncol(beta_mat_init1)
-beta_mat_init1[1,] <- init[1,]
+#beta_mat_init1[1,] <- init[1,]
+beta_mat_init1[1,] <- as.numeric(coefficients(fit))  # initialise with MLE of each coefficient
 acc <- 0
-for(iter in 2:S){
+for (iter in 2:S) {
+  # simulate all (k) values using previous value of beta as mean and set sd
   beta_star <- rnorm(k, beta_mat_init1[iter-1,], 5)
+  # compute target distribution for proposed value
   newpost = lpost.LR(beta_star, X, y)
-  oldpost = lpost.LR(beta_mat_init1[iter-1,], X, y)
+  # compute target distribution for old value
+  oldpost = lpost.LR(beta_mat_init1[iter-1,], X, y)  # symmetric dist => no ratio computed
+  
+  # acceptance step, in log scale
   if (runif(1,0,1) > exp(newpost - oldpost)) {
+    # chain doesn't move
     beta_mat_init1[iter,] = beta_mat_init1[iter-1,]
   } else {
+    # add to chain and add 1 to counter
     beta_mat_init1[iter,] = beta_star
     acc=acc + 1
   }
-  if (iter%%1000 == 0) {print(c(iter,acc/iter))}
+  if (iter%%1000 == 0) {print(c(iter, acc/iter))}
 }
 
 # Second initialisation
 beta_mat_init2 <- matrix(NA, nrow = S, ncol = ncol(X))
+k <- ncol(beta_mat_init2)
 beta_mat_init2[1,] <- init[2,]
 acc <- 0
 for(iter in 2:S){
@@ -247,6 +271,7 @@ for(iter in 2:S){
 
 # Third initialisation
 beta_mat_init3 <- matrix(NA,nrow=S,ncol=ncol(X))
+k <- ncol(beta_mat_init3)
 beta_mat_init3[1,] <- init[3,]
 acc <- 0
 for(iter in 2:S){
@@ -264,6 +289,7 @@ for(iter in 2:S){
 
 # Forth initialisation
 beta_mat_init4 <- matrix(NA,nrow=S,ncol=ncol(X))
+k <- ncol(beta_mat_init4)
 beta_mat_init4[1,] <- init[4,]
 acc <- 0
 for(iter in 2:S){
@@ -281,9 +307,98 @@ for(iter in 2:S){
 
 ```
 Plot the chains for each coefficient (same plot)
+
+```{r}
+fit$coefficients
+```
+
+
+```{r}
+par(mfrow=c(2,2))
+plot(beta_mat_init1[,1], type="l", col="magenta", ylab=expression(beta[0]))
+lines(beta_mat_init2[,1], type="l", col="green")
+lines(beta_mat_init3[,1], type="l", col="red")
+lines(beta_mat_init4[,1], type="l", col="blue")
+abline(h=fit$coefficients[1],col="red",lty=2)
+
+plot(beta_mat_init1[,2], type="l", col="magenta", ylab=expression(beta[1]))
+lines(beta_mat_init2[,2], type="l", col="green")
+lines(beta_mat_init3[,2], type="l", col="red")
+lines(beta_mat_init4[,2], type="l", col="blue")
+abline(h=fit$coefficients[2],col="red",lty=2)
+
+plot(beta_mat_init1[,3], type="l", col="magenta", ylab=expression(beta[2]))
+lines(beta_mat_init2[,3], type="l", col="green")
+lines(beta_mat_init3[,3], type="l", col="red")
+lines(beta_mat_init4[,3], type="l", col="blue")
+abline(h=fit$coefficients[3],col="red",lty=2)
+
+plot(beta_mat_init1[,4], type="l", col="magenta", ylab=expression(beta[3]))
+lines(beta_mat_init2[,4], type="l", col="green")
+lines(beta_mat_init3[,4], type="l", col="red")
+lines(beta_mat_init4[,4], type="l", col="blue")
+abline(h=fit$coefficients[4],col="red",lty=2)
+
+
+par(mfrow=c(2,2))
+plot(beta_mat_init1[,5], type="l", col="magenta", ylab=expression(beta[4]))
+lines(beta_mat_init2[,5], type="l", col="green")
+lines(beta_mat_init3[,5], type="l", col="red")
+lines(beta_mat_init4[,5], type="l", col="blue")
+abline(h=fit$coefficients[5],col="red",lty=2)
+
+plot(beta_mat_init1[,6], type="l", col="magenta", ylab=expression(beta[5]))
+lines(beta_mat_init2[,6], type="l", col="green")
+lines(beta_mat_init3[,6], type="l", col="red")
+lines(beta_mat_init4[,6], type="l", col="blue")
+abline(h=fit$coefficients[6],col="red",lty=2)
+
+plot(beta_mat_init1[,7], type="l", col="magenta", ylab=expression(beta[6]))
+lines(beta_mat_init2[,7], type="l", col="green")
+lines(beta_mat_init3[,7], type="l", col="red")
+lines(beta_mat_init4[,7], type="l", col="blue")
+abline(h=fit$coefficients[7],col="red",lty=2)
+
+plot(beta_mat_init1[,8], type="l", col="magenta", ylab=expression(beta[7]))
+lines(beta_mat_init2[,8], type="l", col="green")
+lines(beta_mat_init3[,8], type="l", col="red")
+lines(beta_mat_init4[,8], type="l", col="blue")
+abline(h=fit$coefficients[8],col="red",lty=2)
+
+par(mfrow=c(2,2))
+plot(beta_mat_init1[,9], type="l", col="magenta", ylab=expression(beta[8]))
+lines(beta_mat_init2[,9], type="l", col="green")
+lines(beta_mat_init3[,9], type="l", col="red")
+lines(beta_mat_init4[,9], type="l", col="blue")
+abline(h=fit$coefficients[9],col="red",lty=2)
+
+plot(beta_mat_init1[,10], type="l", col="magenta", ylab=expression(beta[9]))
+lines(beta_mat_init2[,10], type="l", col="green")
+lines(beta_mat_init3[,10], type="l", col="red")
+lines(beta_mat_init4[,10], type="l", col="blue")
+abline(h=fit$coefficients[10],col="red",lty=2)
+
+plot(beta_mat_init1[,11], type="l", col="magenta", ylab=expression(beta[10]))
+lines(beta_mat_init2[,11], type="l", col="green")
+lines(beta_mat_init3[,11], type="l", col="red")
+lines(beta_mat_init4[,11], type="l", col="blue")
+abline(h=fit$coefficients[11],col="red",lty=2)
+
+plot(beta_mat_init1[,12], type="l", col="magenta", ylab=expression(beta[11]))
+lines(beta_mat_init2[,12], type="l", col="green")
+lines(beta_mat_init3[,12], type="l", col="red")
+lines(beta_mat_init4[,12], type="l", col="blue")
+abline(h=fit$coefficients[12],col="red",lty=2)
+
+
+```
+
+
+
+
 ```{r, echo=FALSE}
-par(mfrow=c(3,2))
-for(i in 1:5){
+par(mfrow=c(6,2))
+for(i in 1:12){
   plot(beta_mat_init1[,i], type="l", col="magenta")
   lines(beta_mat_init2[,i], type="l", col="green")
   lines(beta_mat_init3[,i], type="l", col="red")
