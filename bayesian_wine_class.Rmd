@@ -624,7 +624,8 @@ out$accept
 ```
 This is very low, so we can adjust the scale parameter to find an acceptance rate around 20%.
 ```{r}
-out <- metrop(out, scale = 0.0075)
+#out <- metrop(out, scale = 0.005)  # 0.0075
+out <- metrop(out, scale = c(0.005, 0.00005, 0.00005, 0.00005, 0.00005, 0.00005, 0.00005, 0.00005, 0.0005, 0.00005, 0.00005, 0.00005))
 out$accept
 ```
 
