@@ -233,7 +233,7 @@ beta_mat_init1[1,] <- as.numeric(coefficients(fit))  # initialise with MLE of ea
 acc <- 0
 for (iter in 2:S) {
   # simulate all (k) values using previous value of beta as mean and set sd
-  beta_star <- rnorm(k, beta_mat_init1[iter-1,], 5)
+  beta_star <- rnorm(k, beta_mat_init1[iter-1,], 1)
   # compute target distribution for proposed value
   newpost = lpost.LR(beta_star, X, y)
   # compute target distribution for old value
@@ -257,7 +257,7 @@ k <- ncol(beta_mat_init2)
 beta_mat_init2[1,] <- init[2,]
 acc <- 0
 for(iter in 2:S){
-  beta_star <- rnorm(k, beta_mat_init2[iter-1,], 5)
+  beta_star <- rnorm(k, beta_mat_init2[iter-1,], 1)
   newpost = lpost.LR(beta_star, X, y)
   oldpost = lpost.LR(beta_mat_init2[iter-1,], X, y)
   if (runif(1,0,1) > exp(newpost - oldpost)) {
@@ -275,7 +275,7 @@ k <- ncol(beta_mat_init3)
 beta_mat_init3[1,] <- init[3,]
 acc <- 0
 for(iter in 2:S){
-  beta_star <- rnorm(k,beta_mat_init3[iter-1,], 5)
+  beta_star <- rnorm(k,beta_mat_init3[iter-1,], 1)
   newpost=lpost.LR(beta_star,X,y)
   oldpost=lpost.LR(beta_mat_init3[iter-1,],X,y)
   if(runif(1,0,1)>exp(newpost-oldpost)){
@@ -293,7 +293,7 @@ k <- ncol(beta_mat_init4)
 beta_mat_init4[1,] <- init[4,]
 acc <- 0
 for(iter in 2:S){
-  beta_star <- rnorm(k,beta_mat_init4[iter-1,], 5)
+  beta_star <- rnorm(k,beta_mat_init4[iter-1,], 1)
   newpost=lpost.LR(beta_star,X,y)
   oldpost=lpost.LR(beta_mat_init4[iter-1,],X,y)
   if(runif(1,0,1)>exp(newpost-oldpost)){
@@ -338,8 +338,9 @@ lines(beta_mat_init2[,4], type="l", col="green")
 lines(beta_mat_init3[,4], type="l", col="red")
 lines(beta_mat_init4[,4], type="l", col="blue")
 abline(h=fit$coefficients[4],col="red",lty=2)
+```
 
-
+```{r}
 par(mfrow=c(2,2))
 plot(beta_mat_init1[,5], type="l", col="magenta", ylab=expression(beta[4]))
 lines(beta_mat_init2[,5], type="l", col="green")
@@ -364,7 +365,10 @@ lines(beta_mat_init2[,8], type="l", col="green")
 lines(beta_mat_init3[,8], type="l", col="red")
 lines(beta_mat_init4[,8], type="l", col="blue")
 abline(h=fit$coefficients[8],col="red",lty=2)
+```
 
+
+```{r}
 par(mfrow=c(2,2))
 plot(beta_mat_init1[,9], type="l", col="magenta", ylab=expression(beta[8]))
 lines(beta_mat_init2[,9], type="l", col="green")
@@ -389,23 +393,10 @@ lines(beta_mat_init2[,12], type="l", col="green")
 lines(beta_mat_init3[,12], type="l", col="red")
 lines(beta_mat_init4[,12], type="l", col="blue")
 abline(h=fit$coefficients[12],col="red",lty=2)
-
-
 ```
 
 
 
-
-```{r, echo=FALSE}
-par(mfrow=c(6,2))
-for(i in 1:12){
-  plot(beta_mat_init1[,i], type="l", col="magenta")
-  lines(beta_mat_init2[,i], type="l", col="green")
-  lines(beta_mat_init3[,i], type="l", col="red")
-  lines(beta_mat_init4[,i], type="l", col="blue")
-  abline(h=fit$coefficients[i],col="red",lty=2)
-}
-```
 # 7. Posterior Predictive Distribution
 ```{r}
 fixed_acidity <- 7.5
@@ -477,8 +468,10 @@ plot(beta_mat2[,5],type="l", ylab=expression(beta[4]))
 abline(h=fit$coefficients[5],col="red",lty=2)
 plot(beta_mat2[,6],type="l", ylab=expression(beta[5]))
 abline(h=fit$coefficients[6],col="red",lty=2)
-
 ```
+
+
+
 
 ```{r}
 par(mfrow=c(3,2))
