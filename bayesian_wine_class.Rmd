@@ -3,7 +3,8 @@ title: "Bayesian Logistic Regression"
 author: "Alex B.Dunbar"
 date: "8/9/2021"
 output:
-  pdf_document: default
+  pdf_document:
+      latex_engine: xelatex
   html_document: default
 ---
 Clear environment, graphics and console
@@ -38,7 +39,6 @@ This is an implementation of Bayesian logistic regression using Metropolis-Hasti
 The dataset is described in the publication by Cortez, P., Cerdeira, A., Almeida, F., Matos, T., & Reis, J. (2009). [Modeling wine preferences by data mining from physicochemical properties.](https://www.sciencedirect.com/science/article/pii/S0167923609001377?casa_token=3l0RostJJXAAAAAA:QC5SBNWeoP2No8AVCA8EMu4R9yLCBh5gyZvsEMEVT1DxrzPwybfUyU0fWb8u4sqeqSyIUQBuIQI).
 ```{r}
 wine <- read.csv("winequality-red.csv")
-head(wine)
 ```
 ## Check for missing values
 There are no `NA` values in the dataset.
@@ -46,11 +46,7 @@ There are no `NA` values in the dataset.
 any(is.na(wine))
 ```
 # 3. Classify "good" wines
-We want to implement a logistic regression, therefore we want a response variable which assumes values either 0 or 1. Suppose we consider "good" a wine with quality above 6.5 (included).
-
-We add a column called `good` that is `1` if the `quality` is greater than 6.5 and `0` if `quality` is less than 6.5.
-
-We also add a column of strings called `drinkable`, relating 1 and 0 to "good" and "bad" as appropriate.
+We want to implement a logistic regression, therefore we want a response variable which assumes values either 0 or 1. Suppose we consider "good" a wine with quality above 6.5 (included).  We add a column called `good` that is `1` if the `quality` is greater than 6.5 and `0` if `quality` is less than 6.5. We also add a column of strings called `drinkable`, relating 1 and 0 to "good" and "bad" as appropriate.
 ```{r}
  wine %<>%
   mutate(good = ifelse(quality > 6, 1, 0)) %>%
@@ -76,7 +72,6 @@ Number of good and bad wines from each quality category
 ```{r}
 xtabs(~ good + quality, data=wine)
 ```
-
 
 # 4. Frequentist Logistic Regression
 
@@ -104,6 +99,7 @@ the `total_sulfur_dioxide` coefficient is -0.026. A negative predictor whereby l
 ```{r}
 fit %>% summary()
 ```
+
 
 # 5. Impact on outcome by varying total_sulfur_dioxide
 By fixing all coefficients and varying one, we can see the impact of one particular coefficient has on the probabilistic outcome of the logistic regression. 
@@ -267,8 +263,8 @@ init <- matrix(data=c(runif(48, min = 100, max = 200)), nrow=4, ncol=12, byrow =
 # First initialisation
 beta_mat_init1 <- matrix(NA, nrow = S, ncol = ncol(X))
 k <- ncol(beta_mat_init1)
-#beta_mat_init1[1,] <- init[1,]
-beta_mat_init1[1,] <- as.numeric(coefficients(fit))  # initialise with MLE of each coefficient
+beta_mat_init1[1,] <- init[1,]
+#beta_mat_init1[1,] <- as.numeric(coefficients(fit))  # initialise with MLE of each coefficient
 acc <- 0
 for (iter in 2:S) {
   # simulate all (k) values using previous value of beta as mean and set sd
@@ -690,14 +686,370 @@ rownames(summ) <- c("Intercept", "fixed_acidity", "volatile_acidity", "citric_ac
 ```{r}
 knitr::kable(summ)
 ```
-
+Histogram of spread of chain values
 ```{r}
 # hist(beta_mat_init1[,1])
 # ci0 <- quantile(beta_mat_init1[,1], prob=c(.025,.975)) 
-par(mfrow=c(4,3)) 
-for (i in 1:12) {
-hist(beta_mat_init1[10000:20000,i], main="Beta0", prob=TRUE); abline(v=c(summ[i,1],quantile(beta_mat_init1[10000:20000,i], prob=c(.025,.975))), col="red")
+coeffs <- c("Intercept", "Fixed Acidity", "Volatile Acidity", "Citric Acid", "Residual Sugar",
+                    "Chlorides", "Free Sulfur Dioxide", "Total Sulfur Dioxide", "Density",
+                    "pH", "Sulphates", "Alcohol")
+
+```
+```{r}
+par(mfrow=c(3,2)) 
+for (i in 1:6) {
+hist(beta_mat_init1[,i], main=coeffs[i], prob=TRUE); abline(v=c(summ[i,1],quantile(beta_mat_init1[,i], prob=c(.025,.975))), col="red")
 }
 ```
+```{r}
+par(mfrow=c(3,2)) 
+for (i in 7:12) {
+hist(beta_mat_init1[10000:20000,i], main=coeffs[i], prob=TRUE); abline(v=c(summ[i,1],quantile(beta_mat_init1[10000:20000,i], prob=c(.025,.975))), col="red")
+}
+```
+
+
+# EXTRA
+The following is not part of the scope of the analysis.  It contains normalised data as a comparison to the un-normalised. The outcome is that each coefficient chain is closer to convergence to the MLE value.  The second model using `Omega_prop` <- solve(t(X) %*% X) is a much more stable chain compared to the same using un-normalised data.
+
+## Normalise Data
+Normalised data to compare results
+
+```{r}
+response <- wine$good
+wine = wine[, -c(12, 13, 14)]
+
+normalise <- function(x) {
+  return ((x - min(x)) / (max(x) - min(x)))
+}
+
+wine_norm <- as.data.frame(lapply(wine, normalise))
+y = response
+x = wine_norm
+# Combine data
+
+dat <- cbind(x, y)
+names(dat)[12] <- "GOOD"
+# test <- dat[1:20,]  # match with testPred
+# train <- dat[c(21:100),]
+y = dat$GOOD
+# x = train[,c(1:11)]
+X = cbind(rep(1, nrow(dat)), dat$fixed_acidity, dat$volatile_acidity, dat$citric_acid,
+          dat$residual_sugar, dat$chlorides, dat$free_sulfur_dioxide, dat$total_sulfur_dioxide,
+          dat$density, dat$pH, dat$sulphates, dat$alcohol)
+```
+Fit using normalised covariates
+```{r}
+library(Metrics)
+# 
+# fit <- glm(GOOD ~ ., data = dat)  #; fit$coefficients
+# pred <- predict(fit, test[, c(-12)])
+# rmse(actual = test$GOOD, predicted=pred)
+# summary(fit)
+
+fit <- glm(GOOD ~ ., data = dat, family = binomial(link="logit"))  #; fit$coefficients
+pred <- predict(fit, dat[, c(-12)])
+rmse(actual = dat$GOOD, predicted=pred)
+
+```
+```{r}
+lpost.LR <- function(beta, x, y) {
+  eta <- as.numeric(x %*% beta)
+  logp <- eta - log(1 + exp(eta))
+  logq <- log(1 - exp(logp))
+  logl <- sum(logp[y==1]) + sum(logq[y==0])
+  lprior <- sum(dnorm(beta, 0, 100,log = T))
+  return(logl + lprior)
+}
+```
+
+
+```{r}
+S <- 10000
+init <- matrix(data=c(runif(48, min = 0, max = 0)), nrow=4, ncol=12, byrow = T)
+
+# First initialisation
+beta_mat_init1 <- matrix(NA, nrow = S, ncol = ncol(X))
+k <- ncol(beta_mat_init1)
+beta_mat_init1[1,] <- init[1,]
+#beta_mat_init1[1,] <- as.numeric(coefficients(fit))  # initialise with MLE of each coefficient
+acc <- 0
+for (iter in 2:S) {
+  # simulate all (k) values using previous value of beta as mean and set sd
+  beta_star <- rnorm(k, beta_mat_init1[iter-1,], 0.1)
+  # compute target distribution for proposed value
+  newpost = lpost.LR(beta_star, X, y)
+  # compute target distribution for old value
+  oldpost = lpost.LR(beta_mat_init1[iter-1,], X, y)  # symmetric dist => no ratio computed
+  
+  # acceptance step, in log scale
+  if (runif(1,0,1) > exp(newpost - oldpost)) {
+    # chain doesn't move
+    beta_mat_init1[iter,] = beta_mat_init1[iter-1,]
+  } else {
+    # add to chain and add 1 to counter
+    beta_mat_init1[iter,] = beta_star
+    acc=acc + 1
+  }
+  #if (iter%%1000 == 0) {print(c(iter, acc/iter))}
+}
+print(c(iter, acc/iter))
+
+# Second initialisation
+beta_mat_init2 <- matrix(NA, nrow = S, ncol = ncol(X))
+k <- ncol(beta_mat_init2)
+beta_mat_init2[1,] <- init[2,]
+acc <- 0
+for(iter in 2:S){
+  beta_star <- rnorm(k, beta_mat_init2[iter-1,], 0.1)
+  newpost = lpost.LR(beta_star, X, y)
+  oldpost = lpost.LR(beta_mat_init2[iter-1,], X, y)
+  if (runif(1,0,1) > exp(newpost - oldpost)) {
+    beta_mat_init2[iter,] = beta_mat_init2[iter-1,]
+  } else {
+    beta_mat_init2[iter,] = beta_star
+    acc=acc + 1
+  }
+  #if (iter%%1000==0) {print(c(iter,acc/iter))}
+}
+print(c(iter, acc/iter))
+
+# Third initialisation
+beta_mat_init3 <- matrix(NA,nrow=S,ncol=ncol(X))
+k <- ncol(beta_mat_init3)
+beta_mat_init3[1,] <- init[3,]
+acc <- 0
+for(iter in 2:S){
+  beta_star <- rnorm(k,beta_mat_init3[iter-1,], 0.1)
+  newpost=lpost.LR(beta_star,X,y)
+  oldpost=lpost.LR(beta_mat_init3[iter-1,],X,y)
+  if(runif(1,0,1)>exp(newpost-oldpost)){
+    beta_mat_init3[iter,]=beta_mat_init3[iter-1,]
+  } else{
+    beta_mat_init3[iter,]=beta_star
+    acc=acc+1
+  }
+  #if(iter%%1000==0){print(c(iter,acc/iter))}
+}
+print(c(iter, acc/iter))
+
+# Forth initialisation
+beta_mat_init4 <- matrix(NA,nrow=S,ncol=ncol(X))
+k <- ncol(beta_mat_init4)
+beta_mat_init4[1,] <- init[4,]
+acc <- 0
+for(iter in 2:S){
+  beta_star <- rnorm(k,beta_mat_init4[iter-1,], 0.1)
+  newpost=lpost.LR(beta_star,X,y)
+  oldpost=lpost.LR(beta_mat_init4[iter-1,],X,y)
+  if(runif(1,0,1)>exp(newpost-oldpost)){
+    beta_mat_init4[iter,]=beta_mat_init4[iter-1,]
+  } else{
+    beta_mat_init4[iter,]=beta_star
+    acc=acc+1
+  }
+  #if(iter%%1000==0){print(c(iter,acc/iter))}
+}
+print(c(iter, acc/iter))
+```
+
+
+Plot the chains for each coefficient (same plot)
+
+```{r, echo=FALSE}
+par(mfrow=c(3,2))
+plot(beta_mat_init1[,1], type="l", col="magenta", main=expression(beta[0]))
+lines(beta_mat_init2[,1], type="l", col="green")
+lines(beta_mat_init3[,1], type="l", col="red")
+lines(beta_mat_init4[,1], type="l", col="blue")
+abline(h=fit$coefficients[1],col="red",lty=2)
+
+plot(beta_mat_init1[,2], type="l", col="magenta", main=expression(beta[1]))  #, ylim=(c(-30, 50))
+lines(beta_mat_init2[,2], type="l", col="green")
+lines(beta_mat_init3[,2], type="l", col="red")
+lines(beta_mat_init4[,2], type="l", col="blue")
+abline(h=fit$coefficients[2],col="red",lty=2)
+
+plot(beta_mat_init1[,3], type="l", col="magenta", main=expression(beta[2]))
+lines(beta_mat_init2[,3], type="l", col="green")
+lines(beta_mat_init3[,3], type="l", col="red")
+lines(beta_mat_init4[,3], type="l", col="blue")
+abline(h=fit$coefficients[3],col="red",lty=2)
+
+plot(beta_mat_init1[,4], type="l", col="magenta", main=expression(beta[3]))
+lines(beta_mat_init2[,4], type="l", col="green")
+lines(beta_mat_init3[,4], type="l", col="red")
+lines(beta_mat_init4[,4], type="l", col="blue")
+abline(h=fit$coefficients[4],col="red",lty=2)
+
+plot(beta_mat_init1[,5], type="l", col="magenta", main=expression(beta[4]))
+lines(beta_mat_init2[,5], type="l", col="green")
+lines(beta_mat_init3[,5], type="l", col="red")
+lines(beta_mat_init4[,5], type="l", col="blue")
+abline(h=fit$coefficients[5],col="red",lty=2)
+
+plot(beta_mat_init1[,6], type="l", col="magenta", main=expression(beta[5]))
+lines(beta_mat_init2[,6], type="l", col="green")
+lines(beta_mat_init3[,6], type="l", col="red")
+lines(beta_mat_init4[,6], type="l", col="blue")
+abline(h=fit$coefficients[6],col="red",lty=2)
+```
+
+```{r, echo=FALSE}
+par(mfrow=c(3,2))
+
+plot(beta_mat_init1[,7], type="l", col="magenta", main=expression(beta[6]))  # , ylim=(c(-30, 30))
+lines(beta_mat_init2[,7], type="l", col="green")
+lines(beta_mat_init3[,7], type="l", col="red")
+lines(beta_mat_init4[,7], type="l", col="blue")
+abline(h=fit$coefficients[7],col="red",lty=2)
+
+plot(beta_mat_init1[,8], type="l", col="magenta", main=expression(beta[7]))  # , ylim=(c(-30, 40))
+lines(beta_mat_init2[,8], type="l", col="green")
+lines(beta_mat_init3[,8], type="l", col="red")
+lines(beta_mat_init4[,8], type="l", col="blue")
+abline(h=fit$coefficients[8],col="red",lty=2)
+
+plot(beta_mat_init1[,9], type="l", col="magenta", main=expression(beta[8]))
+lines(beta_mat_init2[,9], type="l", col="green")
+lines(beta_mat_init3[,9], type="l", col="red")
+lines(beta_mat_init4[,9], type="l", col="blue")
+abline(h=fit$coefficients[9],col="red",lty=2)
+
+plot(beta_mat_init1[,10], type="l", col="magenta", main=expression(beta[9]))
+lines(beta_mat_init2[,10], type="l", col="green")
+lines(beta_mat_init3[,10], type="l", col="red")
+lines(beta_mat_init4[,10], type="l", col="blue")
+abline(h=fit$coefficients[10],col="red",lty=2)
+
+plot(beta_mat_init1[,11], type="l", col="magenta", main=expression(beta[10]))
+lines(beta_mat_init2[,11], type="l", col="green")
+lines(beta_mat_init3[,11], type="l", col="red")
+lines(beta_mat_init4[,11], type="l", col="blue")
+abline(h=fit$coefficients[11],col="red",lty=2)
+
+plot(beta_mat_init1[,12], type="l", col="magenta", main=expression(beta[11]))  # , ylim=(c(-30, 50))
+lines(beta_mat_init2[,12], type="l", col="green")
+lines(beta_mat_init3[,12], type="l", col="red")
+lines(beta_mat_init4[,12], type="l", col="blue")
+abline(h=fit$coefficients[12],col="red",lty=2)
+```
+```{r}
+summ <- matrix(NA, nrow=12, ncol=2)
+for (i in 1:12) {
+  summ[i,1] = mean(beta_mat_init1[2000:10000,i])
+  summ[i,2] = sd(beta_mat_init1[2000:10000,i])
+}
+colnames(summ) <- c("Mean_MH", "SD_MH")
+rownames(summ) <- c("Intercept", "fixed_acidity", "volatile_acidity", "citric_acid", "residual_sugar",
+                    "chlorides", "free_sulfur_dioxide", "total_sulfur_dioxide", "density",
+                    "pH", "sulphates", "alcohol")
+```
+
+Histogram of spread of chain values
+```{r}
+# hist(beta_mat_init1[,1])
+# ci0 <- quantile(beta_mat_init1[,1], prob=c(.025,.975)) 
+coeffs <- c("Intercept", "Fixed Acidity", "Volatile Acidity", "Citric Acid", "Residual Sugar",
+                    "Chlorides", "Free Sulfur Dioxide", "Total Sulfur Dioxide", "Density",
+                    "pH", "Sulphates", "Alcohol")
+
+```
+```{r}
+par(mfrow=c(3,2)) 
+for (i in 1:6) {
+hist(beta_mat_init1[,i], main=coeffs[i], prob=TRUE); abline(v=c(summ[i,1],quantile(beta_mat_init1[,i], prob=c(.025,.975))), col="red")
+}
+```
+```{r}
+par(mfrow=c(3,2)) 
+for (i in 7:12) {
+hist(beta_mat_init1[,i], main=coeffs[i], prob=TRUE); abline(v=c(summ[i,1],quantile(beta_mat_init1[,i], prob=c(.025,.975))), col="red")
+}
+```
+
+
+```{r}
+S <- 20000
+beta_mat2 <- matrix(NA, nrow = S, ncol = ncol(X))
+beta_mat2[1,] <- as.numeric(coefficients(fit))
+
+y_new <- c(1)
+x_new <- c(1, fixed_acidity, volatile_acidity, citric_acid, residual_sugar,
+           chlorides, free_sulfur_dioxide, total_sulfur_dioxide, density,
+           pH, sulphates, alcohol)
+```
+```{r}
+library(mvtnorm)
+
+# prediction
+
+Omega_prop <- solve(t(X) %*% X)
+k <- ncol(beta_mat2)
+acc <- 0
+for(iter in 2:S)
+{
+  # 1. Propose a new set of values
+  beta_star <- rmvnorm(1, beta_mat2[iter-1,], 1.5 * Omega_prop)
+  
+  # 2. Compute the posterior density on the proposed value and on the old value  
+  newpost=lpost.LR(t(beta_star), X, y)
+  oldpost=lpost.LR(matrix(beta_mat2[iter-1,], ncol=1), X, y)
+  
+  # 3. Acceptance step
+  if (runif(1, 0, 1) > exp(newpost - oldpost)) {
+    beta_mat2[iter,] = beta_mat2[iter-1,]
+  } else {
+    beta_mat2[iter,] = beta_star
+    acc = acc + 1
+  }
+  # 4. Print the stage of the chain
+  if (iter%%1000 == 0){ print(c(iter, acc/iter)) }
+  
+  # 5. Prediction 
+  p_new <- exp(sum(beta_mat2[iter,] * x_new) ) / (1 + exp(sum(beta_mat2[iter,] * x_new) ))
+  y_new[iter] <- rbinom(1,1,prob=p_new)
+}
+```
+```{r, echo=FALSE}
+par(mfrow=c(3,2))
+plot(beta_mat2[,1],type="l", ylab=expression(beta[0]))
+abline(h=fit$coefficients[1],col="red",lty=2)
+plot(beta_mat2[,2],type="l", ylab=expression(beta[1]))
+abline(h=fit$coefficients[2],col="red",lty=2)
+plot(beta_mat2[,3],type="l", ylab=expression(beta[2]))
+abline(h=fit$coefficients[3],col="red",lty=2)
+plot(beta_mat2[,4],type="l", ylab=expression(beta[3]))
+abline(h=fit$coefficients[4],col="red",lty=2)
+plot(beta_mat2[,5],type="l", ylab=expression(beta[4]))
+abline(h=fit$coefficients[5],col="red",lty=2)
+plot(beta_mat2[,6],type="l", ylab=expression(beta[5]))
+abline(h=fit$coefficients[6],col="red",lty=2)
+```
+```{r, echo=FALSE}
+par(mfrow=c(3,2))
+plot(beta_mat2[,7],type="l", ylab=expression(beta[6]))
+abline(h=fit$coefficients[7],col="red",lty=2)
+plot(beta_mat2[,8],type="l", ylab=expression(beta[7]))
+abline(h=fit$coefficients[8],col="red",lty=2)
+plot(beta_mat2[,9],type="l", ylab=expression(beta[8]))
+abline(h=fit$coefficients[9],col="red",lty=2)
+plot(beta_mat2[,10],type="l", ylab=expression(beta[9]))
+abline(h=fit$coefficients[10],col="red",lty=2)
+plot(beta_mat2[,11],type="l", ylab=expression(beta[10]))
+abline(h=fit$coefficients[11],col="red",lty=2)
+plot(beta_mat2[,12],type="l", ylab=expression(beta[11]))
+abline(h=fit$coefficients[12],col="red",lty=2)
+```
+
+
+
+
+
+
+
+
+
+
 
 
