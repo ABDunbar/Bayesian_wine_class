@@ -3,10 +3,9 @@ title: "Bayesian Logistic Regression"
 author: "Alex B.Dunbar"
 date: "8/9/2021"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
-
 Clear environment, graphics and console
 ```{r}
 # Clear environment ####
@@ -32,7 +31,7 @@ pacman::p_load(pacman, rio, tidyverse, GGally, magrittr, broom, skimr)  #party,
 knitr::opts_chunk$set(echo = TRUE)
 ```
 # 1. Introduction
-This is a Bayesian logistic regression related to red variants of the Portuguese "Vinho Verde" wine.  There are 11 input variables (covariates) based on physiochemical tests.  The output variable is `quality` and is a score between 0 and 10 which is based on sensory data.
+This is an implementation of Bayesian logistic regression using Metropolis-Hastings posterior sampling. The data is related to red variants of the Portuguese "Vinho Verde" wine.  There are 11 regressor variables (covariates) which are based on physiochemical tests.  The output variable is `good`, (1-good, 0-not-good) based on the `quality` variable which is a score between 0 and 10. `quality` is based on sensory data.
 
 
 # 2. Import data.
@@ -69,9 +68,19 @@ The structure of the dataset, `str(wine)`, will confirm that there are no `NA` v
 ```{r}
 str(wine)
 ```
+Overview of dataset
+```{r}
+wine %>% skim()
+```
+Number of good and bad wines from each quality category
+```{r}
+xtabs(~ good + quality, data=wine)
+```
+
+
 # 4. Frequentist Logistic Regression
 
-The logistic model is computed using the generalised linear model (glm) with `good` being a function of all other covariates except `quality` and `drinkable`.
+We first implement a classic logistic regression model. From this model we can obtain the model coefficients.  These coefficients are the MLE estimates which can be used as the initialisation values when we run the Metropolis-Hastings sampling. The classic logistic model is computed using the generalised linear model (glm) with `good` being a function of all other covariates except `quality` and `drinkable`.
 
 ```{r}
 fit <- glm(
@@ -133,12 +142,12 @@ alcohol_range <- seq(from=min(wine$alcohol), to=max(wine$alcohol), by=0.05)
 volatile_acidity_range <- seq(from=min(wine$volatile_acidity), to=max(wine$volatile_acidity), by=0.002)
 ```
 Plot of the range histogram of each of the four most significant covariates.
-```{r}
+```{r, echo=FALSE}
 par(mfrow=c(2,2))
-hist(total_sulfur_dioxide_range)
-hist(sulphates_range)
-hist(alcohol_range)
-hist(volatile_acidity_range)
+hist(total_sulfur_dioxide_range, xlab="Range", main="Total Sulfur Dioxide")
+hist(sulphates_range, xlab="Range", main="Sulphates")
+hist(alcohol_range, xlab="Range", main="Alcohol")
+hist(volatile_acidity_range, xlab="Range", main="Volatile Acidity")
 ```
 
 Calculate probabilities for each significant coefficient
@@ -159,29 +168,13 @@ volatile_acidity_GOOD <- b0 + b1*fixed_acidity_mean + b2*volatile_acidity_range 
   b3*citric_acid_mean + b4*residual_sugar_mean + b5*chlorides_mean + b6*free_sulfur_dioxide_mean +
   b7*total_sulfur_dioxide_mean + b8*density_mean + b9*pH_mean + b10*sulphates_mean + b11*alcohol_mean
 ```
-Histograms of what????
-```{r}
-par(mfrow=c(2,2))
-hist(total_sulfur_dioxide_GOOD)
-hist(sulphates_GOOD)
-hist(alcohol_GOOD)
-hist(volatile_acidity_GOOD)
-```
 
-Calculate logistic probabilities for each
+Calculate log odds probabilities for each
 ```{r}
 total_sulfur_dioxide_probs <- exp(total_sulfur_dioxide_GOOD)/(1 + exp(total_sulfur_dioxide_GOOD))
 sulphates_probs <- exp(sulphates_GOOD) / (1 + exp(sulphates_GOOD))
 alcohol_probs <- exp(alcohol_GOOD) / (1 + exp(alcohol_GOOD))
 volatile_acidity_probs <- exp(volatile_acidity_GOOD) / (1 + exp(volatile_acidity_GOOD))
-```
-Plot logistic probabilities
-```{r}
-par(mfrow=c(2,2))
-hist(total_sulfur_dioxide_probs)
-hist(sulphates_probs)
-hist(alcohol_probs)
-hist(volatile_acidity_probs)
 ```
 
 ## Plot the results.
@@ -208,9 +201,7 @@ plot(volatile_acidity_range, volatile_acidity_probs,
 
 # 6. Bayesian Logistic Regression
 
-The following is a Bayesian logistic regression analysis. 
-
-To perform a Bayesian analysis via Metropolis-Hastings algorithm we write a function defining the target distribution of the Beta coefficients.  We work in terms of log posterior to avoid numerical problems with computer computation.
+The following is a Bayesian logistic regression analysis. To perform a Bayesian analysis via Metropolis-Hastings algorithm we write a function defining the target distribution of the Beta coefficients.  We work in terms of log posterior to avoid numerical problems with computer computation.
 
 ## Likelihood.
 The likelihood is a product of Bernoulli likelihoods for each combination of covariate and response variable for the i-th term.
@@ -222,12 +213,13 @@ $$ \log L (\beta; y, x) = \sum_{i=1}^n y_i(x_i \beta) - \log [1 + \text{exp}(x_i
 Independent normal prior distributions for each $\beta_j, j=0,1,\dots,k$, such that $\beta_j \sim N(0, 100)$
 
 ## Log posterior distribution
+This function will compute the log-likelihood and the log-prior and return the log-posterior.  The function is called in the Metropolis-Hastings algorithm to compute the distribution for the proposed value ($\beta^*$) for the next value the chain to compare against the existing value in the chain.
 ```{r}
 lpost.LR <- function(beta, x, y) {
   # beta: vector of coefficients
   # x: covariates (regressors)
   # y: response variable
-  
+  # -------------------------------
   # eta is the matrix product of the covariates and the coefficients
   eta <- as.numeric(x %*% beta)
   # logp: y=1, in terms of logistic function
@@ -242,15 +234,6 @@ lpost.LR <- function(beta, x, y) {
   return(logl + lprior)
 }
 ```
-The MLE for each coefficient can be used to initialise the simulation matrix
-```{r}
-fit <- glm(
-  #good ~ volatile_acidity + total_sulfur_dioxide + sulphates + alcohol,  # test model
-  good ~ . - quality - drinkable,  #  full model
-  data = wine,
-  family = binomial(link="logit")
-)
-```
 Set seed for reproducible results
 ```{r}
 set.seed(1234)
@@ -261,9 +244,6 @@ S <- 10^4
 ```
 Set `X` and `y` variables
 ```{r}
-# X=cbind(rep(1,nrow(wine)), wine$volatile_acidity, wine$total_sulfur_dioxide,
-#          wine$sulphates, wine$alcohol)
-
 X = cbind(rep(1, nrow(wine)), wine$fixed_acidity, wine$volatile_acidity, wine$citric_acid,
           wine$residual_sugar, wine$chlorides, wine$free_sulfur_dioxide, wine$total_sulfur_dioxide,
           wine$density, wine$pH, wine$sulphates, wine$alcohol)
@@ -272,7 +252,7 @@ y <- wine$good[1]
 ```
 ## Initialisations for the coefficients
 
-The first initialisation contains the MLE estimates for each coefficient. The remaining three initialisations are randomly selected values between 500 and 1000 from the uniform distribution $runif(48, 500, 1000)$.
+The first initialisation contains the MLE estimates for each coefficient. The remaining three initialisations are randomly selected values between 100 and 200 from the uniform distribution $runif(48, 100, 200)$.
 ```{r}
 # init <- matrix(data=c(runif(20, min = 100, max = 200)), nrow=4, ncol=5, byrow = T)  # for testing
 init <- matrix(data=c(runif(48, min = 100, max = 200)), nrow=4, ncol=12, byrow = T)
@@ -365,7 +345,7 @@ print(c(iter, acc/iter))
 ```
 Plot the chains for each coefficient (same plot)
 
-```{r}
+```{r, echo=FALSE}
 par(mfrow=c(3,2))
 plot(beta_mat_init1[,1], type="l", col="magenta", ylab=expression(beta[0]))
 lines(beta_mat_init2[,1], type="l", col="green")
@@ -373,7 +353,7 @@ lines(beta_mat_init3[,1], type="l", col="red")
 lines(beta_mat_init4[,1], type="l", col="blue")
 abline(h=fit$coefficients[1],col="red",lty=2)
 
-plot(beta_mat_init1[,2], type="l", col="magenta", ylab=expression(beta[1]))
+plot(beta_mat_init1[,2], type="l", col="magenta", ylim=(c(-30, 50)), ylab=expression(beta[1]))
 lines(beta_mat_init2[,2], type="l", col="green")
 lines(beta_mat_init3[,2], type="l", col="red")
 lines(beta_mat_init4[,2], type="l", col="blue")
@@ -403,61 +383,46 @@ lines(beta_mat_init3[,6], type="l", col="red")
 lines(beta_mat_init4[,6], type="l", col="blue")
 abline(h=fit$coefficients[6],col="red",lty=2)
 ```
-## Comment
 
-* varied standard deviation of the prior in the posterior distribution function (0.5, 1, 5, 10, 20, 50)
-* varied standard deviation of the Metropolis-Hastings algorithm (0.5, 1, 5, 10, 20, 50)
-* varied the random initialised values (+/- 100, 0-1, 0-10, 0-100, 10-100, 100-200, 500-1000)
 ```{r}
 fit$coefficients[1:6]
 ```
 
-$\beta_0$ (`Intercept`: 242.7625): No convergence with MLE.  All four chains do converge to a value around zero.
 
-$\beta_1$ (`fixed_acidity`: 0.275): First chain containing MLE converges to a value close but slightly under the coefficient.  The other three chains containing random initialisations converge to a value approximately 20-30.
-
-$\beta_2$ (`volative_acidity`: -2.581): All four chains converge to a value close to the coefficient.
-
-$\beta_3$ (`citric_acid`: 0.568): All four chains converge to a value close to the coefficient.
-
-$\beta_4$ (`residual_sugar`: 0.239): All four chains converge to a value close to the coefficient.
-
-$\beta_5$ (`chlorides`: -8.816): All four chains converge to a value close to the coefficient.
-
-```{r}
+```{r, echo=FALSE}
 par(mfrow=c(3,2))
 
-plot(beta_mat_init1[,7], type="l", col="magenta", ylab=expression(beta[6]))
+plot(beta_mat_init1[,7], type="l", col="magenta", ylim=(c(-30, 30)), main=expression(beta[6]))
 lines(beta_mat_init2[,7], type="l", col="green")
 lines(beta_mat_init3[,7], type="l", col="red")
 lines(beta_mat_init4[,7], type="l", col="blue")
 abline(h=fit$coefficients[7],col="red",lty=2)
 
-plot(beta_mat_init1[,8], type="l", col="magenta", ylab=expression(beta[7]))
+plot(beta_mat_init1[,8], type="l", col="magenta", ylim=(c(-30, 40)), main=expression(beta[7]))
 lines(beta_mat_init2[,8], type="l", col="green")
 lines(beta_mat_init3[,8], type="l", col="red")
 lines(beta_mat_init4[,8], type="l", col="blue")
 abline(h=fit$coefficients[8],col="red",lty=2)
 
-plot(beta_mat_init1[,9], type="l", col="magenta", ylab=expression(beta[8]))
+plot(beta_mat_init1[,9], type="l", col="magenta", main=expression(beta[8]))
 lines(beta_mat_init2[,9], type="l", col="green")
 lines(beta_mat_init3[,9], type="l", col="red")
 lines(beta_mat_init4[,9], type="l", col="blue")
 abline(h=fit$coefficients[9],col="red",lty=2)
 
-plot(beta_mat_init1[,10], type="l", col="magenta", ylab=expression(beta[9]))
+plot(beta_mat_init1[,10], type="l", col="magenta", main=expression(beta[9]))
 lines(beta_mat_init2[,10], type="l", col="green")
 lines(beta_mat_init3[,10], type="l", col="red")
 lines(beta_mat_init4[,10], type="l", col="blue")
 abline(h=fit$coefficients[10],col="red",lty=2)
 
-plot(beta_mat_init1[,11], type="l", col="magenta", ylab=expression(beta[10]))
+plot(beta_mat_init1[,11], type="l", col="magenta", main=expression(beta[10]))
 lines(beta_mat_init2[,11], type="l", col="green")
 lines(beta_mat_init3[,11], type="l", col="red")
 lines(beta_mat_init4[,11], type="l", col="blue")
 abline(h=fit$coefficients[11],col="red",lty=2)
 
-plot(beta_mat_init1[,12], type="l", col="magenta", ylab=expression(beta[11]))
+plot(beta_mat_init1[,12], type="l", col="magenta", ylim=(c(-30, 50)), main=expression(beta[11]))
 lines(beta_mat_init2[,12], type="l", col="green")
 lines(beta_mat_init3[,12], type="l", col="red")
 lines(beta_mat_init4[,12], type="l", col="blue")
@@ -467,18 +432,32 @@ abline(h=fit$coefficients[12],col="red",lty=2)
 ```{r}
 fit$coefficients[7:12]
 ```
-
+$\beta_0$ (`Intercept`: 242.7625): No convergence with MLE.  All four chains do converge to a value around zero.
+$\beta_1$ (`fixed_acidity`: 0.275): First chain containing MLE converges to a value close but slightly under the coefficient.  The other three chains containing random initialisations converge to a value approximately 20-30.
+$\beta_2$ (`volative_acidity`: -2.581): All four chains converge to a value close to the coefficient.
+$\beta_3$ (`citric_acid`: 0.568): All four chains converge to a value close to the coefficient.
+$\beta_4$ (`residual_sugar`: 0.239): All four chains converge to a value close to the coefficient.
+$\beta_5$ (`chlorides`: -8.816): All four chains converge to a value close to the coefficient.
 $\beta_6$ (`free_sulfur_dioxide`: 0.011): First chain containing MLE converges to a value close but slightly under the coefficient.  The other three chains containing random initialisations converge to a value approximately 20-30.
-
 $\beta_7$ (`total_sulfur_dioxide`: -0.017): First chain converges to a value just below coefficient but chains 2-4 don't converge to coefficient.
-
 $\beta_8$ (`density`: -257.798): First chain converges to a value at about the coefficient but chains 2-4 converge to a value slightly above the coefficient
-
 $\beta_9$ (`pH`: 0.224): All four chains converge to a value close to the coefficient.
-
 $\beta_{10}$ (`sulphates`: 3.750): All four chains converge to a value close to the coefficient.
-
 $\beta_{11}$ (`alcohol`: 0.753): First chain converges to a value at about the coefficient but chains 2-4 converge to a value above the coefficient
+
+--------------------------------------------------------------------------------
+
+
+## Comment
+
+How good is the distribution for the parameter?
+
+* varied standard deviation of the prior in the posterior distribution function (0.5, 1, 5, 10, 20, 50)
+> increasing the standard deviation increases the instability
+> decreasing the standard deviation decreases ability to find convergence with "true" value
+* varied standard deviation of the Metropolis-Hastings algorithm (0.5, 1, 5, 10, 20, 50)
+* varied the random initialised values (+/- 100, 0-1, 0-10, 0-100, 10-100, 100-200, 500-1000)
+> some ranges close to zero produce errors
 
 
 # 7. Posterior Predictive Distribution
@@ -504,7 +483,6 @@ beta_mat2 <- matrix(NA, nrow = S, ncol = ncol(X))
 beta_mat2[1,] <- as.numeric(coefficients(fit))
 
 y_new <- c(1)
-# x_new <- c(1, 5, 0.63, 12, 0.6)  # for testing
 x_new <- c(1, fixed_acidity, volatile_acidity, citric_acid, residual_sugar,
            chlorides, free_sulfur_dioxide, total_sulfur_dioxide, density,
            pH, sulphates, alcohol)
@@ -546,7 +524,7 @@ for(iter in 2:S)
 
 Plots
 
-```{r}
+```{r, echo=FALSE}
 par(mfrow=c(3,2))
 plot(beta_mat2[,1],type="l", ylab=expression(beta[0]))
 abline(h=fit$coefficients[1],col="red",lty=2)
@@ -565,7 +543,7 @@ abline(h=fit$coefficients[6],col="red",lty=2)
 Plots
 
 
-```{r}
+```{r, echo=FALSE}
 par(mfrow=c(3,2))
 plot(beta_mat2[,7],type="l", ylab=expression(beta[6]))
 abline(h=fit$coefficients[7],col="red",lty=2)
@@ -580,7 +558,20 @@ abline(h=fit$coefficients[11],col="red",lty=2)
 plot(beta_mat2[,12],type="l", ylab=expression(beta[11]))
 abline(h=fit$coefficients[12],col="red",lty=2)
 ```
+$\beta_0$ (`Intercept`: 242.7625): ## No convergence with MLE.  converge to a value around zero.
+$\beta_1$ (`fixed_acidity`: 0.275): ##  
+$\beta_2$ (`volative_acidity`: -2.581): ## 
+$\beta_3$ (`citric_acid`: 0.568): ## 
+$\beta_4$ (`residual_sugar`: 0.239): ## 
+$\beta_5$ (`chlorides`: -8.816): ## 
+$\beta_6$ (`free_sulfur_dioxide`: 0.011): ## 
+$\beta_7$ (`total_sulfur_dioxide`: -0.017): ## 
+$\beta_8$ (`density`: -257.798): ## 
+$\beta_9$ (`pH`: 0.224): ## 
+$\beta_{10}$ (`sulphates`: 3.750): ## 
+$\beta_{11}$ (`alcohol`: 0.753): ## 
 
+--------------------------------------------------------------------------------
 
 ```{r}
 table(y_new[15000:20000])
@@ -591,10 +582,6 @@ Implementation of the `metrop()` function was through the [MCMC Package Example,
 
 ```{r}
 library(mcmc)
-# out <- glm(wine$quality ~ wine$volatile_acidity + wine$total_sulfur_dioxide + wine$sulphates + wine$alcohol, data=wine, family=binomial, x=TRUE)
-# summary(out)
-
-# full model
 out <- glm(good ~ . - quality - drinkable, data=wine, family=binomial, x=TRUE)
 ```
 
@@ -630,7 +617,7 @@ out$accept
 ```
 
 
-```{r}
+```{r, echo=FALSE}
 par(mfrow=c(3,2))
 plot(ts(out$batch)[,1], ylab=expression(beta[0]))
 abline(h=fit$coefficients[1],col="red",lty=2)
@@ -647,21 +634,55 @@ abline(h=fit$coefficients[6],col="red",lty=2)
 ```
 
 
-
-```{r}
+```{r, echo=FALSE}
 par(mfrow=c(3,2))
-plot(ts(out$batch)[,7], ylab=expression(beta[0]))
+plot(ts(out$batch)[,7], ylab=expression(beta[7]))
 abline(h=fit$coefficients[7],col="red",lty=2)
-plot(ts(out$batch)[,8], ylab=expression(beta[1]))
+plot(ts(out$batch)[,8], ylab=expression(beta[8]))
 abline(h=fit$coefficients[8],col="red",lty=2)
-plot(ts(out$batch)[,9], ylab=expression(beta[2]))
+plot(ts(out$batch)[,9], ylab=expression(beta[9]))
 abline(h=fit$coefficients[9],col="red",lty=2)
-plot(ts(out$batch)[,10], ylab=expression(beta[3]))
+plot(ts(out$batch)[,10], ylab=expression(beta[10]))
 abline(h=fit$coefficients[10],col="red",lty=2)
-plot(ts(out$batch)[,11], ylab=expression(beta[4]))
+plot(ts(out$batch)[,11], ylab=expression(beta[11]))
 abline(h=fit$coefficients[11],col="red",lty=2)
-plot(ts(out$batch)[,12], ylab=expression(beta[5]))
+plot(ts(out$batch)[,12], ylab=expression(beta[12]))
 abline(h=fit$coefficients[12],col="red",lty=2)
 ```
 ## VISUAL COMPARISON
+
+$\beta_0$ (`Intercept`: 242.7625): ## 
+$\beta_1$ (`fixed_acidity`: 0.275): ## 
+$\beta_2$ (`volatile_acidity`: -2.581): ## 
+$\beta_3$ (`citric_acid`: 0.568): ## 
+$\beta_4$ (`residual_sugar`: 0.239): ## 
+$\beta_5$ (`chlorides`: -8.816): ## 
+$\beta_6$ (`free_sulfur_dioxide`: 0.011): 
+$\beta_7$ (`total_sulfur_dioxide`: -0.017): ## 
+$\beta_8$ (`density`: -257.798): ## 
+$\beta_9$ (`pH`: 0.224): ## 
+$\beta_{10}$ (`sulphates`: 3.750): ## 
+$\beta_{11}$ (`alcohol`: 0.753): ## 
+
+
+```{r}
+summ <- matrix(NA, nrow=12, ncol=6)
+for (i in 1:12) {
+  summ[i,1] = mean(beta_mat_init1[2000:10000,i])
+  summ[i,2] = sd(beta_mat_init1[2000:10000,i])
+  summ[i,3] = mean(beta_mat2[12000:20000,i])
+  summ[i,4] = sd(beta_mat2[12000:20000,i])
+  summ[i,5] = mean(ts(out$batch)[,i])
+  summ[i,6] = sd(ts(out$batch)[,i])
+}
+colnames(summ) <- c("Mean_MH", "SD_MH", "Mean_MH2", "SD_MH2", "Mean_Metrop", "SD_Metrop")
+rownames(summ) <- c("Intercept", "fixed_acidity", "volatile_acidity", "citric_acid", "residual_sugar",
+                    "chlorides", "free_sulfur_dioxide", "total_sulfur_dioxide", "density",
+                    "pH", "sulphates", "alcohol")
+```
+```{r}
+knitr::kable(summ)
+```
+
+
 

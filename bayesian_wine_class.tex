@@ -1,0 +1,1145 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Bayesian Logistic Regression},
+  pdfauthor={Alex B.Dunbar},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifluatex
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+
+\title{Bayesian Logistic Regression}
+\author{Alex B.Dunbar}
+\date{8/9/2021}
+
+\begin{document}
+\maketitle
+
+Clear environment, graphics and console
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Clear environment \#\#\#\#}
+\FunctionTok{rm}\NormalTok{(}\AttributeTok{list =} \FunctionTok{ls}\NormalTok{()) }
+
+\CommentTok{\# Clear plots}
+\FunctionTok{graphics.off}\NormalTok{()  }\CommentTok{\# Clears plots, closes all graphics devices}
+
+\CommentTok{\# Clear console}
+\FunctionTok{cat}\NormalTok{(}\StringTok{"}\SpecialCharTok{\textbackslash{}014}\StringTok{"}\NormalTok{)  }\CommentTok{\# ctrl+L}
+\end{Highlighting}
+\end{Shaded}
+
+ Install required packages
+
+\hypertarget{introduction}{%
+\section{1. Introduction}\label{introduction}}
+
+This is an implementation of Bayesian logistic regression using
+Metropolis-Hastings posterior sampling. The data is related to red
+variants of the Portuguese ``Vinho Verde'' wine. There are 11 regressor
+variables (covariates) which are based on physiochemical tests. The
+output variable is \texttt{good}, (1-good, 0-not-good) based on the
+\texttt{quality} variable which is a score between 0 and 10.
+\texttt{quality} is based on sensory data.
+
+\hypertarget{import-data.}{%
+\section{2. Import data.}\label{import-data.}}
+
+The dataset is described in the publication by Cortez, P., Cerdeira, A.,
+Almeida, F., Matos, T., \& Reis, J. (2009).
+\href{https://www.sciencedirect.com/science/article/pii/S0167923609001377?casa_token=3l0RostJJXAAAAAA:QC5SBNWeoP2No8AVCA8EMu4R9yLCBh5gyZvsEMEVT1DxrzPwybfUyU0fWb8u4sqeqSyIUQBuIQI}{Modeling
+wine preferences by data mining from physicochemical properties.}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{wine }\OtherTok{\textless{}{-}} \FunctionTok{read.csv}\NormalTok{(}\StringTok{"winequality{-}red.csv"}\NormalTok{)}
+\FunctionTok{head}\NormalTok{(wine)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   fixed.acidity volatile.acidity citric.acid residual.sugar chlorides
+## 1           7.4             0.70        0.00            1.9     0.076
+## 2           7.8             0.88        0.00            2.6     0.098
+## 3           7.8             0.76        0.04            2.3     0.092
+## 4          11.2             0.28        0.56            1.9     0.075
+## 5           7.4             0.70        0.00            1.9     0.076
+## 6           7.4             0.66        0.00            1.8     0.075
+##   free.sulfur.dioxide total.sulfur.dioxide density   pH sulphates alcohol
+## 1                  11                   34  0.9978 3.51      0.56     9.4
+## 2                  25                   67  0.9968 3.20      0.68     9.8
+## 3                  15                   54  0.9970 3.26      0.65     9.8
+## 4                  17                   60  0.9980 3.16      0.58     9.8
+## 5                  11                   34  0.9978 3.51      0.56     9.4
+## 6                  13                   40  0.9978 3.51      0.56     9.4
+##   quality
+## 1       5
+## 2       5
+## 3       5
+## 4       6
+## 5       5
+## 6       5
+\end{verbatim}
+
+\hypertarget{check-for-missing-values}{%
+\subsection{Check for missing values}\label{check-for-missing-values}}
+
+There are no \texttt{NA} values in the dataset.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{any}\NormalTok{(}\FunctionTok{is.na}\NormalTok{(wine))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] FALSE
+\end{verbatim}
+
+\hypertarget{classify-good-wines}{%
+\section{3. Classify ``good'' wines}\label{classify-good-wines}}
+
+We want to implement a logistic regression, therefore we want a response
+variable which assumes values either 0 or 1. Suppose we consider
+``good'' a wine with quality above 6.5 (included).
+
+We add a column called \texttt{good} that is \texttt{1} if the
+\texttt{quality} is greater than 6.5 and \texttt{0} if \texttt{quality}
+is less than 6.5.
+
+We also add a column of strings called \texttt{drinkable}, relating 1
+and 0 to ``good'' and ``bad'' as appropriate.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ wine }\SpecialCharTok{\%\textless{}\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{good =} \FunctionTok{ifelse}\NormalTok{(quality }\SpecialCharTok{\textgreater{}} \DecValTok{6}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{drinkable =} \FunctionTok{ifelse}\NormalTok{(quality }\SpecialCharTok{\textgreater{}} \DecValTok{6}\NormalTok{, }\StringTok{"good"}\NormalTok{, }\StringTok{"bad"}\NormalTok{)) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{quality =} \FunctionTok{factor}\NormalTok{(quality, }\AttributeTok{levels=}\DecValTok{1}\SpecialCharTok{:}\DecValTok{10}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+Remove spaces from names to make references easier.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{colnames}\NormalTok{(wine) }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"fixed\_acidity"}\NormalTok{, }\StringTok{"volatile\_acidity"}\NormalTok{, }\StringTok{"citric\_acid"}\NormalTok{,}
+                      \StringTok{"residual\_sugar"}\NormalTok{, }\StringTok{"chlorides"}\NormalTok{, }\StringTok{"free\_sulfur\_dioxide"}\NormalTok{,}
+                      \StringTok{"total\_sulfur\_dioxide"}\NormalTok{, }\StringTok{"density"}\NormalTok{, }\StringTok{"pH"}\NormalTok{, }\StringTok{"sulphates"}\NormalTok{,}
+                      \StringTok{"alcohol"}\NormalTok{, }\StringTok{"quality"}\NormalTok{, }\StringTok{"good"}\NormalTok{, }\StringTok{"drinkable"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+The structure of the dataset, \texttt{str(wine)}, will confirm that
+there are no \texttt{NA} values, the feature names, the feature type
+(num, Factor, chr) and the first 10 values.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{str}\NormalTok{(wine)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 'data.frame':    1599 obs. of  14 variables:
+##  $ fixed_acidity       : num  7.4 7.8 7.8 11.2 7.4 7.4 7.9 7.3 7.8 7.5 ...
+##  $ volatile_acidity    : num  0.7 0.88 0.76 0.28 0.7 0.66 0.6 0.65 0.58 0.5 ...
+##  $ citric_acid         : num  0 0 0.04 0.56 0 0 0.06 0 0.02 0.36 ...
+##  $ residual_sugar      : num  1.9 2.6 2.3 1.9 1.9 1.8 1.6 1.2 2 6.1 ...
+##  $ chlorides           : num  0.076 0.098 0.092 0.075 0.076 0.075 0.069 0.065 0.073 0.071 ...
+##  $ free_sulfur_dioxide : num  11 25 15 17 11 13 15 15 9 17 ...
+##  $ total_sulfur_dioxide: num  34 67 54 60 34 40 59 21 18 102 ...
+##  $ density             : num  0.998 0.997 0.997 0.998 0.998 ...
+##  $ pH                  : num  3.51 3.2 3.26 3.16 3.51 3.51 3.3 3.39 3.36 3.35 ...
+##  $ sulphates           : num  0.56 0.68 0.65 0.58 0.56 0.56 0.46 0.47 0.57 0.8 ...
+##  $ alcohol             : num  9.4 9.8 9.8 9.8 9.4 9.4 9.4 10 9.5 10.5 ...
+##  $ quality             : Factor w/ 10 levels "1","2","3","4",..: 5 5 5 6 5 5 5 7 7 5 ...
+##  $ good                : num  0 0 0 0 0 0 0 1 1 0 ...
+##  $ drinkable           : chr  "bad" "bad" "bad" "bad" ...
+\end{verbatim}
+
+Overview of dataset
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{wine }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{skim}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}ll@{}}
+\caption{Data summary}\tabularnewline
+\toprule
+& \\
+\midrule
+\endfirsthead
+\toprule
+& \\
+\midrule
+\endhead
+Name & Piped data \\
+Number of rows & 1599 \\
+Number of columns & 14 \\
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ & \\
+Column type frequency: & \\
+character & 1 \\
+factor & 1 \\
+numeric & 12 \\
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ & \\
+Group variables & None \\
+\bottomrule
+\end{longtable}
+
+\textbf{Variable type: character}
+
+\begin{longtable}[]{@{}lrrrrrrr@{}}
+\toprule
+skim\_variable & n\_missing & complete\_rate & min & max & empty &
+n\_unique & whitespace \\
+\midrule
+\endhead
+drinkable & 0 & 1 & 3 & 4 & 0 & 2 & 0 \\
+\bottomrule
+\end{longtable}
+
+\textbf{Variable type: factor}
+
+\begin{longtable}[]{@{}lrrlrl@{}}
+\toprule
+skim\_variable & n\_missing & complete\_rate & ordered & n\_unique &
+top\_counts \\
+\midrule
+\endhead
+quality & 0 & 1 & FALSE & 6 & 5: 681, 6: 638, 7: 199, 4: 53 \\
+\bottomrule
+\end{longtable}
+
+\textbf{Variable type: numeric}
+
+\begin{longtable}[]{@{}lrrrrrrrrrl@{}}
+\toprule
+skim\_variable & n\_missing & complete\_rate & mean & sd & p0 & p25 &
+p50 & p75 & p100 & hist \\
+\midrule
+\endhead
+fixed\_acidity & 0 & 1 & 8.32 & 1.74 & 4.60 & 7.10 & 7.90 & 9.20 & 15.90
+& ▂▇▂▁▁ \\
+volatile\_acidity & 0 & 1 & 0.53 & 0.18 & 0.12 & 0.39 & 0.52 & 0.64 &
+1.58 & ▅▇▂▁▁ \\
+citric\_acid & 0 & 1 & 0.27 & 0.19 & 0.00 & 0.09 & 0.26 & 0.42 & 1.00 &
+▇▆▅▁▁ \\
+residual\_sugar & 0 & 1 & 2.54 & 1.41 & 0.90 & 1.90 & 2.20 & 2.60 &
+15.50 & ▇▁▁▁▁ \\
+chlorides & 0 & 1 & 0.09 & 0.05 & 0.01 & 0.07 & 0.08 & 0.09 & 0.61 &
+▇▁▁▁▁ \\
+free\_sulfur\_dioxide & 0 & 1 & 15.87 & 10.46 & 1.00 & 7.00 & 14.00 &
+21.00 & 72.00 & ▇▅▁▁▁ \\
+total\_sulfur\_dioxide & 0 & 1 & 46.47 & 32.90 & 6.00 & 22.00 & 38.00 &
+62.00 & 289.00 & ▇▂▁▁▁ \\
+density & 0 & 1 & 1.00 & 0.00 & 0.99 & 1.00 & 1.00 & 1.00 & 1.00 &
+▁▃▇▂▁ \\
+pH & 0 & 1 & 3.31 & 0.15 & 2.74 & 3.21 & 3.31 & 3.40 & 4.01 & ▁▅▇▂▁ \\
+sulphates & 0 & 1 & 0.66 & 0.17 & 0.33 & 0.55 & 0.62 & 0.73 & 2.00 &
+▇▅▁▁▁ \\
+alcohol & 0 & 1 & 10.42 & 1.07 & 8.40 & 9.50 & 10.20 & 11.10 & 14.90 &
+▇▇▃▁▁ \\
+good & 0 & 1 & 0.14 & 0.34 & 0.00 & 0.00 & 0.00 & 0.00 & 1.00 & ▇▁▁▁▁ \\
+\bottomrule
+\end{longtable}
+
+Number of good and bad wines from each quality category
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{xtabs}\NormalTok{(}\SpecialCharTok{\textasciitilde{}}\NormalTok{ good }\SpecialCharTok{+}\NormalTok{ quality, }\AttributeTok{data=}\NormalTok{wine)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##     quality
+## good   1   2   3   4   5   6   7   8   9  10
+##    0   0   0  10  53 681 638   0   0   0   0
+##    1   0   0   0   0   0   0 199  18   0   0
+\end{verbatim}
+
+\hypertarget{frequentist-logistic-regression}{%
+\section{4. Frequentist Logistic
+Regression}\label{frequentist-logistic-regression}}
+
+We first implement a classic logistic regression model. From this model
+we can obtain the model coefficients. These coefficients are the MLE
+estimates which can be used as the initialisation values when we run the
+Metropolis-Hastings sampling. The classic logistic model is computed
+using the generalised linear model (glm) with \texttt{good} being a
+function of all other covariates except \texttt{quality} and
+\texttt{drinkable}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{fit }\OtherTok{\textless{}{-}} \FunctionTok{glm}\NormalTok{(}
+\NormalTok{  good }\SpecialCharTok{\textasciitilde{}}\NormalTok{ . }\SpecialCharTok{{-}}\NormalTok{ quality }\SpecialCharTok{{-}}\NormalTok{ drinkable,}
+  \AttributeTok{data =}\NormalTok{ wine,}
+  \AttributeTok{family =} \FunctionTok{binomial}\NormalTok{(}\AttributeTok{link=}\StringTok{"logit"}\NormalTok{)}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{significant-coefficients}{%
+\subsection{Significant coefficients}\label{significant-coefficients}}
+
+The significant coefficients are labelled in the last column of the
+summary() function. Most significant coefficients are:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{sulphates} (Pr(\(\alpha\) \textgreater{} 6.924 = 4.39e-12)),
+\item
+  \texttt{alcohol}(Pr(\(\alpha\) \textgreater{} 5.724 = 1.04e-08)),
+\item
+  \texttt{volatile\_acidity} (Pr(\(\alpha\) \textgreater{}
+  \textbar-3.291\textbar{} = 9.99e-4)), and
+\item
+  \texttt{total\_sulfur\_dioxide} (Pr(\(\alpha\) \textgreater{}
+  \textbar-3.378\textbar{} = 7.31e-4))
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{fit }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{summary}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## glm(formula = good ~ . - quality - drinkable, family = binomial(link = "logit"), 
+##     data = wine)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.9878  -0.4351  -0.2207  -0.1222   2.9869  
+## 
+## Coefficients:
+##                        Estimate Std. Error z value Pr(>|z|)    
+## (Intercept)           2.428e+02  1.081e+02   2.247 0.024660 *  
+## fixed_acidity         2.750e-01  1.253e-01   2.195 0.028183 *  
+## volatile_acidity     -2.581e+00  7.843e-01  -3.291 0.000999 ***
+## citric_acid           5.678e-01  8.385e-01   0.677 0.498313    
+## residual_sugar        2.395e-01  7.373e-02   3.248 0.001163 ** 
+## chlorides            -8.816e+00  3.365e+00  -2.620 0.008788 ** 
+## free_sulfur_dioxide   1.082e-02  1.223e-02   0.884 0.376469    
+## total_sulfur_dioxide -1.653e-02  4.894e-03  -3.378 0.000731 ***
+## density              -2.578e+02  1.104e+02  -2.335 0.019536 *  
+## pH                    2.242e-01  9.984e-01   0.225 0.822327    
+## sulphates             3.750e+00  5.416e-01   6.924 4.39e-12 ***
+## alcohol               7.533e-01  1.316e-01   5.724 1.04e-08 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 1269.92  on 1598  degrees of freedom
+## Residual deviance:  870.86  on 1587  degrees of freedom
+## AIC: 894.86
+## 
+## Number of Fisher Scoring iterations: 6
+\end{verbatim}
+
+\hypertarget{impact-on-outcome-by-varying-total_sulfur_dioxide}{%
+\section{5. Impact on outcome by varying
+total\_sulfur\_dioxide}\label{impact-on-outcome-by-varying-total_sulfur_dioxide}}
+
+By fixing all coefficients and varying one, we can see the impact of one
+particular coefficient has on the probabilistic outcome of the logistic
+regression.
+
+As a comparison I have fixed all significant coefficients in turn
+(\texttt{total\_sulfur\_dioxide}, \texttt{volatile\_acidity},
+\texttt{sulphates} and \texttt{alcohol})
+
+First, we save coefficients to their own variable.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{b0 }\OtherTok{\textless{}{-}}\NormalTok{ fit}\SpecialCharTok{$}\NormalTok{coefficients[}\DecValTok{1}\NormalTok{]  }\CommentTok{\# Intercept = 242.76251933}
+\NormalTok{b1 }\OtherTok{\textless{}{-}}\NormalTok{ fit}\SpecialCharTok{$}\NormalTok{coefficients[}\DecValTok{2}\NormalTok{]  }\CommentTok{\# fixed\_acidity = 0.27495289}
+\NormalTok{b2 }\OtherTok{\textless{}{-}}\NormalTok{ fit}\SpecialCharTok{$}\NormalTok{coefficients[}\DecValTok{3}\NormalTok{]  }\CommentTok{\# volatile\_acidity = {-}2.58100211}
+\NormalTok{b3 }\OtherTok{\textless{}{-}}\NormalTok{ fit}\SpecialCharTok{$}\NormalTok{coefficients[}\DecValTok{4}\NormalTok{]  }\CommentTok{\# citric\_acid = 0.56779433}
+\NormalTok{b4 }\OtherTok{\textless{}{-}}\NormalTok{ fit}\SpecialCharTok{$}\NormalTok{coefficients[}\DecValTok{5}\NormalTok{]  }\CommentTok{\# residual\_sugar = 0.23946420}
+\NormalTok{b5 }\OtherTok{\textless{}{-}}\NormalTok{ fit}\SpecialCharTok{$}\NormalTok{coefficients[}\DecValTok{6}\NormalTok{]  }\CommentTok{\# chlorides = {-}8.81636544}
+\NormalTok{b6 }\OtherTok{\textless{}{-}}\NormalTok{ fit}\SpecialCharTok{$}\NormalTok{coefficients[}\DecValTok{7}\NormalTok{]  }\CommentTok{\# free\_sulfur\_dioxide = 0.01082060}
+\NormalTok{b7 }\OtherTok{\textless{}{-}}\NormalTok{ fit}\SpecialCharTok{$}\NormalTok{coefficients[}\DecValTok{8}\NormalTok{]  }\CommentTok{\# total\_sulfur\_dioxide = {-}0.01653061}
+\NormalTok{b8 }\OtherTok{\textless{}{-}}\NormalTok{ fit}\SpecialCharTok{$}\NormalTok{coefficients[}\DecValTok{9}\NormalTok{]  }\CommentTok{\# density = {-}257.79757874}
+\NormalTok{b9 }\OtherTok{\textless{}{-}}\NormalTok{ fit}\SpecialCharTok{$}\NormalTok{coefficients[}\DecValTok{10}\NormalTok{]  }\CommentTok{\# pH = 0.22418522}
+\NormalTok{b10 }\OtherTok{\textless{}{-}}\NormalTok{ fit}\SpecialCharTok{$}\NormalTok{coefficients[}\DecValTok{11}\NormalTok{]  }\CommentTok{\# sulphates = 3.74987886}
+\NormalTok{b11 }\OtherTok{\textless{}{-}}\NormalTok{ fit}\SpecialCharTok{$}\NormalTok{coefficients[}\DecValTok{12}\NormalTok{]  }\CommentTok{\# alcohol = 0.75333905}
+\end{Highlighting}
+\end{Shaded}
+
+Then save each individual mean values
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{fixed\_acidity\_mean }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{fixed\_acidity)}
+\NormalTok{volatile\_acidity\_mean }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{volatile\_acidity)}
+\NormalTok{citric\_acid\_mean }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{citric\_acid)}
+\NormalTok{residual\_sugar\_mean }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{residual\_sugar)}
+\NormalTok{chlorides\_mean }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{chlorides)}
+\NormalTok{free\_sulfur\_dioxide\_mean }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{free\_sulfur\_dioxide)}
+\NormalTok{total\_sulfur\_dioxide\_mean }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{total\_sulfur\_dioxide)}
+\NormalTok{density\_mean }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{density)}
+\NormalTok{pH\_mean }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{pH)}
+\NormalTok{sulphates\_mean }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{sulphates)}
+\NormalTok{alcohol\_mean }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{alcohol)}
+\end{Highlighting}
+\end{Shaded}
+
+Compute the range of each significant coefficient,
+\texttt{total\_sulfur\_dioxide}, \texttt{sulphates}, \texttt{alcohol},
+and \texttt{volatile\_acidity}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{total\_sulfur\_dioxide\_range }\OtherTok{\textless{}{-}} \FunctionTok{seq}\NormalTok{(}\AttributeTok{from=}\FunctionTok{min}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{total\_sulfur\_dioxide), }\AttributeTok{to=}\FunctionTok{max}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{total\_sulfur\_dioxide), }\AttributeTok{by=}\DecValTok{1}\NormalTok{)}
+\NormalTok{sulphates\_range }\OtherTok{\textless{}{-}} \FunctionTok{seq}\NormalTok{(}\AttributeTok{from=}\FunctionTok{min}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{sulphates), }\AttributeTok{to=}\FunctionTok{max}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{sulphates), }\AttributeTok{by=}\FloatTok{0.002}\NormalTok{)}
+\NormalTok{alcohol\_range }\OtherTok{\textless{}{-}} \FunctionTok{seq}\NormalTok{(}\AttributeTok{from=}\FunctionTok{min}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{alcohol), }\AttributeTok{to=}\FunctionTok{max}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{alcohol), }\AttributeTok{by=}\FloatTok{0.05}\NormalTok{)}
+\NormalTok{volatile\_acidity\_range }\OtherTok{\textless{}{-}} \FunctionTok{seq}\NormalTok{(}\AttributeTok{from=}\FunctionTok{min}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{volatile\_acidity), }\AttributeTok{to=}\FunctionTok{max}\NormalTok{(wine}\SpecialCharTok{$}\NormalTok{volatile\_acidity), }\AttributeTok{by=}\FloatTok{0.002}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Plot of the range histogram of each of the four most significant
+covariates.
+\includegraphics{bayesian_wine_class_files/figure-latex/unnamed-chunk-15-1.pdf}
+
+Calculate probabilities for each significant coefficient
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{total\_sulfur\_dioxide\_GOOD }\OtherTok{\textless{}{-}}\NormalTok{ b0 }\SpecialCharTok{+}\NormalTok{ b1}\SpecialCharTok{*}\NormalTok{fixed\_acidity\_mean }\SpecialCharTok{+}\NormalTok{ b2}\SpecialCharTok{*}\NormalTok{volatile\_acidity\_mean }\SpecialCharTok{+}
+\NormalTok{  b3}\SpecialCharTok{*}\NormalTok{citric\_acid\_mean }\SpecialCharTok{+}\NormalTok{ b4}\SpecialCharTok{*}\NormalTok{residual\_sugar\_mean }\SpecialCharTok{+}\NormalTok{ b5}\SpecialCharTok{*}\NormalTok{chlorides\_mean }\SpecialCharTok{+}\NormalTok{ b6}\SpecialCharTok{*}\NormalTok{free\_sulfur\_dioxide\_mean }\SpecialCharTok{+}
+\NormalTok{  b7}\SpecialCharTok{*}\NormalTok{total\_sulfur\_dioxide\_range }\SpecialCharTok{+}\NormalTok{ b8}\SpecialCharTok{*}\NormalTok{density\_mean }\SpecialCharTok{+}\NormalTok{ b9}\SpecialCharTok{*}\NormalTok{pH\_mean }\SpecialCharTok{+}\NormalTok{ b10}\SpecialCharTok{*}\NormalTok{sulphates\_mean }\SpecialCharTok{+}\NormalTok{ b11}\SpecialCharTok{*}\NormalTok{alcohol\_mean}
+
+\NormalTok{sulphates\_GOOD }\OtherTok{\textless{}{-}}\NormalTok{ b0 }\SpecialCharTok{+}\NormalTok{ b1}\SpecialCharTok{*}\NormalTok{fixed\_acidity\_mean }\SpecialCharTok{+}\NormalTok{ b2}\SpecialCharTok{*}\NormalTok{volatile\_acidity\_mean }\SpecialCharTok{+}
+\NormalTok{  b3}\SpecialCharTok{*}\NormalTok{citric\_acid\_mean }\SpecialCharTok{+}\NormalTok{ b4}\SpecialCharTok{*}\NormalTok{residual\_sugar\_mean }\SpecialCharTok{+}\NormalTok{ b5}\SpecialCharTok{*}\NormalTok{chlorides\_mean }\SpecialCharTok{+}\NormalTok{ b6}\SpecialCharTok{*}\NormalTok{free\_sulfur\_dioxide\_mean }\SpecialCharTok{+}
+\NormalTok{  b7}\SpecialCharTok{*}\NormalTok{total\_sulfur\_dioxide\_mean }\SpecialCharTok{+}\NormalTok{ b8}\SpecialCharTok{*}\NormalTok{density\_mean }\SpecialCharTok{+}\NormalTok{ b9}\SpecialCharTok{*}\NormalTok{pH\_mean }\SpecialCharTok{+}\NormalTok{ b10}\SpecialCharTok{*}\NormalTok{sulphates\_range }\SpecialCharTok{+}\NormalTok{ b11}\SpecialCharTok{*}\NormalTok{alcohol\_mean}
+
+\NormalTok{alcohol\_GOOD }\OtherTok{\textless{}{-}}\NormalTok{ b0 }\SpecialCharTok{+}\NormalTok{ b1}\SpecialCharTok{*}\NormalTok{fixed\_acidity\_mean }\SpecialCharTok{+}\NormalTok{ b2}\SpecialCharTok{*}\NormalTok{volatile\_acidity\_mean }\SpecialCharTok{+}
+\NormalTok{  b3}\SpecialCharTok{*}\NormalTok{citric\_acid\_mean }\SpecialCharTok{+}\NormalTok{ b4}\SpecialCharTok{*}\NormalTok{residual\_sugar\_mean }\SpecialCharTok{+}\NormalTok{ b5}\SpecialCharTok{*}\NormalTok{chlorides\_mean }\SpecialCharTok{+}\NormalTok{ b6}\SpecialCharTok{*}\NormalTok{free\_sulfur\_dioxide\_mean }\SpecialCharTok{+}
+\NormalTok{  b7}\SpecialCharTok{*}\NormalTok{total\_sulfur\_dioxide\_mean }\SpecialCharTok{+}\NormalTok{ b8}\SpecialCharTok{*}\NormalTok{density\_mean }\SpecialCharTok{+}\NormalTok{ b9}\SpecialCharTok{*}\NormalTok{pH\_mean }\SpecialCharTok{+}\NormalTok{ b10}\SpecialCharTok{*}\NormalTok{sulphates\_mean }\SpecialCharTok{+}\NormalTok{ b11}\SpecialCharTok{*}\NormalTok{alcohol\_range}
+
+\NormalTok{volatile\_acidity\_GOOD }\OtherTok{\textless{}{-}}\NormalTok{ b0 }\SpecialCharTok{+}\NormalTok{ b1}\SpecialCharTok{*}\NormalTok{fixed\_acidity\_mean }\SpecialCharTok{+}\NormalTok{ b2}\SpecialCharTok{*}\NormalTok{volatile\_acidity\_range }\SpecialCharTok{+}
+\NormalTok{  b3}\SpecialCharTok{*}\NormalTok{citric\_acid\_mean }\SpecialCharTok{+}\NormalTok{ b4}\SpecialCharTok{*}\NormalTok{residual\_sugar\_mean }\SpecialCharTok{+}\NormalTok{ b5}\SpecialCharTok{*}\NormalTok{chlorides\_mean }\SpecialCharTok{+}\NormalTok{ b6}\SpecialCharTok{*}\NormalTok{free\_sulfur\_dioxide\_mean }\SpecialCharTok{+}
+\NormalTok{  b7}\SpecialCharTok{*}\NormalTok{total\_sulfur\_dioxide\_mean }\SpecialCharTok{+}\NormalTok{ b8}\SpecialCharTok{*}\NormalTok{density\_mean }\SpecialCharTok{+}\NormalTok{ b9}\SpecialCharTok{*}\NormalTok{pH\_mean }\SpecialCharTok{+}\NormalTok{ b10}\SpecialCharTok{*}\NormalTok{sulphates\_mean }\SpecialCharTok{+}\NormalTok{ b11}\SpecialCharTok{*}\NormalTok{alcohol\_mean}
+\end{Highlighting}
+\end{Shaded}
+
+Calculate log odds probabilities for each
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{total\_sulfur\_dioxide\_probs }\OtherTok{\textless{}{-}} \FunctionTok{exp}\NormalTok{(total\_sulfur\_dioxide\_GOOD)}\SpecialCharTok{/}\NormalTok{(}\DecValTok{1} \SpecialCharTok{+} \FunctionTok{exp}\NormalTok{(total\_sulfur\_dioxide\_GOOD))}
+\NormalTok{sulphates\_probs }\OtherTok{\textless{}{-}} \FunctionTok{exp}\NormalTok{(sulphates\_GOOD) }\SpecialCharTok{/}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{+} \FunctionTok{exp}\NormalTok{(sulphates\_GOOD))}
+\NormalTok{alcohol\_probs }\OtherTok{\textless{}{-}} \FunctionTok{exp}\NormalTok{(alcohol\_GOOD) }\SpecialCharTok{/}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{+} \FunctionTok{exp}\NormalTok{(alcohol\_GOOD))}
+\NormalTok{volatile\_acidity\_probs }\OtherTok{\textless{}{-}} \FunctionTok{exp}\NormalTok{(volatile\_acidity\_GOOD) }\SpecialCharTok{/}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{+} \FunctionTok{exp}\NormalTok{(volatile\_acidity\_GOOD))}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{plot-the-results.}{%
+\subsection{Plot the results.}\label{plot-the-results.}}
+
+The plots of each of the four covariates are the probabilities across
+the range of
+\includegraphics{bayesian_wine_class_files/figure-latex/unnamed-chunk-18-1.pdf}
+
+\hypertarget{bayesian-logistic-regression}{%
+\section{6. Bayesian Logistic
+Regression}\label{bayesian-logistic-regression}}
+
+The following is a Bayesian logistic regression analysis. To perform a
+Bayesian analysis via Metropolis-Hastings algorithm we write a function
+defining the target distribution of the Beta coefficients. We work in
+terms of log posterior to avoid numerical problems with computer
+computation.
+
+\hypertarget{likelihood.}{%
+\subsection{Likelihood.}\label{likelihood.}}
+
+The likelihood is a product of Bernoulli likelihoods for each
+combination of covariate and response variable for the i-th term.
+\[ L(\beta; y, x) = \prod_{i=1}^n \bigg(\frac{\text{exp}(x_i \beta)}{1 + \text{exp}(x_i \beta)}\bigg)^{y_i}\bigg(1- \frac{\text{exp}(x_i \beta)}{1 + \text{exp}(x_i \beta)}\bigg)^{1-y_i} \]
+\#\# Log-likelihood
+\[ \log L (\beta; y, x) = \sum_{i=1}^n y_i(x_i \beta) - \log [1 + \text{exp}(x_i \beta)] \]
+
+\hypertarget{prior}{%
+\subsection{Prior}\label{prior}}
+
+Independent normal prior distributions for each
+\(\beta_j, j=0,1,\dots,k\), such that \(\beta_j \sim N(0, 100)\)
+
+\hypertarget{log-posterior-distribution}{%
+\subsection{Log posterior
+distribution}\label{log-posterior-distribution}}
+
+This function will compute the log-likelihood and the log-prior and
+return the log-posterior. The function is called in the
+Metropolis-Hastings algorithm to compute the distribution for the
+proposed value (\(\beta^*\)) for the next value the chain to compare
+against the existing value in the chain.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{lpost.LR }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(beta, x, y) \{}
+  \CommentTok{\# beta: vector of coefficients}
+  \CommentTok{\# x: covariates (regressors)}
+  \CommentTok{\# y: response variable}
+  \CommentTok{\# {-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}}
+  \CommentTok{\# eta is the matrix product of the covariates and the coefficients}
+\NormalTok{  eta }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(x }\SpecialCharTok{\%*\%}\NormalTok{ beta)}
+  \CommentTok{\# logp: y=1, in terms of logistic function}
+\NormalTok{  logp }\OtherTok{\textless{}{-}}\NormalTok{ eta }\SpecialCharTok{{-}} \FunctionTok{log}\NormalTok{(}\DecValTok{1} \SpecialCharTok{+} \FunctionTok{exp}\NormalTok{(eta))  }\CommentTok{\# in log scale}
+  \CommentTok{\# logq: y=0, expressed in terms of logistic function}
+\NormalTok{  logq }\OtherTok{\textless{}{-}} \FunctionTok{log}\NormalTok{(}\DecValTok{1} \SpecialCharTok{{-}} \FunctionTok{exp}\NormalTok{(logp))}
+  \CommentTok{\# sum of both contributions: when y=1 + when y=0}
+\NormalTok{  logl }\OtherTok{\textless{}{-}} \FunctionTok{sum}\NormalTok{(logp[y}\SpecialCharTok{==}\DecValTok{1}\NormalTok{]) }\SpecialCharTok{+} \FunctionTok{sum}\NormalTok{(logq[y}\SpecialCharTok{==}\DecValTok{0}\NormalTok{])}
+  \CommentTok{\# log prior: normal indep prior dists $N(0, 100)$}
+\NormalTok{  lprior }\OtherTok{\textless{}{-}} \FunctionTok{sum}\NormalTok{(}\FunctionTok{dnorm}\NormalTok{(beta, }\DecValTok{0}\NormalTok{, }\DecValTok{10}\NormalTok{,}\AttributeTok{log =}\NormalTok{ T))  }\CommentTok{\# 10: mixed, 50 var, 100 large var, 20 like 10, 5 low}
+  \CommentTok{\# return log posterior (likelihood + prior)}
+  \FunctionTok{return}\NormalTok{(logl }\SpecialCharTok{+}\NormalTok{ lprior)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+Set seed for reproducible results
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{set.seed}\NormalTok{(}\DecValTok{1234}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{number-of-simulations}{%
+\subsection{Number of simulations}\label{number-of-simulations}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{S }\OtherTok{\textless{}{-}} \DecValTok{10}\SpecialCharTok{\^{}}\DecValTok{4}
+\end{Highlighting}
+\end{Shaded}
+
+Set \texttt{X} and \texttt{y} variables
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{X }\OtherTok{=} \FunctionTok{cbind}\NormalTok{(}\FunctionTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{, }\FunctionTok{nrow}\NormalTok{(wine)), wine}\SpecialCharTok{$}\NormalTok{fixed\_acidity, wine}\SpecialCharTok{$}\NormalTok{volatile\_acidity, wine}\SpecialCharTok{$}\NormalTok{citric\_acid,}
+\NormalTok{          wine}\SpecialCharTok{$}\NormalTok{residual\_sugar, wine}\SpecialCharTok{$}\NormalTok{chlorides, wine}\SpecialCharTok{$}\NormalTok{free\_sulfur\_dioxide, wine}\SpecialCharTok{$}\NormalTok{total\_sulfur\_dioxide,}
+\NormalTok{          wine}\SpecialCharTok{$}\NormalTok{density, wine}\SpecialCharTok{$}\NormalTok{pH, wine}\SpecialCharTok{$}\NormalTok{sulphates, wine}\SpecialCharTok{$}\NormalTok{alcohol)}
+
+\NormalTok{y }\OtherTok{\textless{}{-}}\NormalTok{ wine}\SpecialCharTok{$}\NormalTok{good[}\DecValTok{1}\NormalTok{]}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{initialisations-for-the-coefficients}{%
+\subsection{Initialisations for the
+coefficients}\label{initialisations-for-the-coefficients}}
+
+The first initialisation contains the MLE estimates for each
+coefficient. The remaining three initialisations are randomly selected
+values between 100 and 200 from the uniform distribution
+\(runif(48, 100, 200)\).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# init \textless{}{-} matrix(data=c(runif(20, min = 100, max = 200)), nrow=4, ncol=5, byrow = T)  \# for testing}
+\NormalTok{init }\OtherTok{\textless{}{-}} \FunctionTok{matrix}\NormalTok{(}\AttributeTok{data=}\FunctionTok{c}\NormalTok{(}\FunctionTok{runif}\NormalTok{(}\DecValTok{48}\NormalTok{, }\AttributeTok{min =} \DecValTok{100}\NormalTok{, }\AttributeTok{max =} \DecValTok{200}\NormalTok{)), }\AttributeTok{nrow=}\DecValTok{4}\NormalTok{, }\AttributeTok{ncol=}\DecValTok{12}\NormalTok{, }\AttributeTok{byrow =}\NormalTok{ T)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{run-a-metropolis-hastings-algorithm}{%
+\subsection{Run a Metropolis-Hastings
+algorithm}\label{run-a-metropolis-hastings-algorithm}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# First initialisation}
+\NormalTok{beta\_mat\_init1 }\OtherTok{\textless{}{-}} \FunctionTok{matrix}\NormalTok{(}\ConstantTok{NA}\NormalTok{, }\AttributeTok{nrow =}\NormalTok{ S, }\AttributeTok{ncol =} \FunctionTok{ncol}\NormalTok{(X))}
+\NormalTok{k }\OtherTok{\textless{}{-}} \FunctionTok{ncol}\NormalTok{(beta\_mat\_init1)}
+\CommentTok{\#beta\_mat\_init1[1,] \textless{}{-} init[1,]}
+\NormalTok{beta\_mat\_init1[}\DecValTok{1}\NormalTok{,] }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(}\FunctionTok{coefficients}\NormalTok{(fit))  }\CommentTok{\# initialise with MLE of each coefficient}
+\NormalTok{acc }\OtherTok{\textless{}{-}} \DecValTok{0}
+\ControlFlowTok{for}\NormalTok{ (iter }\ControlFlowTok{in} \DecValTok{2}\SpecialCharTok{:}\NormalTok{S) \{}
+  \CommentTok{\# simulate all (k) values using previous value of beta as mean and set sd}
+\NormalTok{  beta\_star }\OtherTok{\textless{}{-}} \FunctionTok{rnorm}\NormalTok{(k, beta\_mat\_init1[iter}\DecValTok{{-}1}\NormalTok{,], }\DecValTok{5}\NormalTok{)}
+  \CommentTok{\# compute target distribution for proposed value}
+\NormalTok{  newpost }\OtherTok{=} \FunctionTok{lpost.LR}\NormalTok{(beta\_star, X, y)}
+  \CommentTok{\# compute target distribution for old value}
+\NormalTok{  oldpost }\OtherTok{=} \FunctionTok{lpost.LR}\NormalTok{(beta\_mat\_init1[iter}\DecValTok{{-}1}\NormalTok{,], X, y)  }\CommentTok{\# symmetric dist =\textgreater{} no ratio computed}
+  
+  \CommentTok{\# acceptance step, in log scale}
+  \ControlFlowTok{if}\NormalTok{ (}\FunctionTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{) }\SpecialCharTok{\textgreater{}} \FunctionTok{exp}\NormalTok{(newpost }\SpecialCharTok{{-}}\NormalTok{ oldpost)) \{}
+    \CommentTok{\# chain doesn\textquotesingle{}t move}
+\NormalTok{    beta\_mat\_init1[iter,] }\OtherTok{=}\NormalTok{ beta\_mat\_init1[iter}\DecValTok{{-}1}\NormalTok{,]}
+\NormalTok{  \} }\ControlFlowTok{else}\NormalTok{ \{}
+    \CommentTok{\# add to chain and add 1 to counter}
+\NormalTok{    beta\_mat\_init1[iter,] }\OtherTok{=}\NormalTok{ beta\_star}
+\NormalTok{    acc}\OtherTok{=}\NormalTok{acc }\SpecialCharTok{+} \DecValTok{1}
+\NormalTok{  \}}
+  \CommentTok{\#if (iter\%\%1000 == 0) \{print(c(iter, acc/iter))\}}
+\NormalTok{\}}
+\FunctionTok{print}\NormalTok{(}\FunctionTok{c}\NormalTok{(iter, acc}\SpecialCharTok{/}\NormalTok{iter))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 1.000e+04 3.046e-01
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Second initialisation}
+\NormalTok{beta\_mat\_init2 }\OtherTok{\textless{}{-}} \FunctionTok{matrix}\NormalTok{(}\ConstantTok{NA}\NormalTok{, }\AttributeTok{nrow =}\NormalTok{ S, }\AttributeTok{ncol =} \FunctionTok{ncol}\NormalTok{(X))}
+\NormalTok{k }\OtherTok{\textless{}{-}} \FunctionTok{ncol}\NormalTok{(beta\_mat\_init2)}
+\NormalTok{beta\_mat\_init2[}\DecValTok{1}\NormalTok{,] }\OtherTok{\textless{}{-}}\NormalTok{ init[}\DecValTok{2}\NormalTok{,]}
+\NormalTok{acc }\OtherTok{\textless{}{-}} \DecValTok{0}
+\ControlFlowTok{for}\NormalTok{(iter }\ControlFlowTok{in} \DecValTok{2}\SpecialCharTok{:}\NormalTok{S)\{}
+\NormalTok{  beta\_star }\OtherTok{\textless{}{-}} \FunctionTok{rnorm}\NormalTok{(k, beta\_mat\_init2[iter}\DecValTok{{-}1}\NormalTok{,], }\DecValTok{5}\NormalTok{)}
+\NormalTok{  newpost }\OtherTok{=} \FunctionTok{lpost.LR}\NormalTok{(beta\_star, X, y)}
+\NormalTok{  oldpost }\OtherTok{=} \FunctionTok{lpost.LR}\NormalTok{(beta\_mat\_init2[iter}\DecValTok{{-}1}\NormalTok{,], X, y)}
+  \ControlFlowTok{if}\NormalTok{ (}\FunctionTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{) }\SpecialCharTok{\textgreater{}} \FunctionTok{exp}\NormalTok{(newpost }\SpecialCharTok{{-}}\NormalTok{ oldpost)) \{}
+\NormalTok{    beta\_mat\_init2[iter,] }\OtherTok{=}\NormalTok{ beta\_mat\_init2[iter}\DecValTok{{-}1}\NormalTok{,]}
+\NormalTok{  \} }\ControlFlowTok{else}\NormalTok{ \{}
+\NormalTok{    beta\_mat\_init2[iter,] }\OtherTok{=}\NormalTok{ beta\_star}
+\NormalTok{    acc}\OtherTok{=}\NormalTok{acc }\SpecialCharTok{+} \DecValTok{1}
+\NormalTok{  \}}
+  \CommentTok{\#if (iter\%\%1000==0) \{print(c(iter,acc/iter))\}}
+\NormalTok{\}}
+\FunctionTok{print}\NormalTok{(}\FunctionTok{c}\NormalTok{(iter, acc}\SpecialCharTok{/}\NormalTok{iter))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 1.000e+04 1.705e-01
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Third initialisation}
+\NormalTok{beta\_mat\_init3 }\OtherTok{\textless{}{-}} \FunctionTok{matrix}\NormalTok{(}\ConstantTok{NA}\NormalTok{,}\AttributeTok{nrow=}\NormalTok{S,}\AttributeTok{ncol=}\FunctionTok{ncol}\NormalTok{(X))}
+\NormalTok{k }\OtherTok{\textless{}{-}} \FunctionTok{ncol}\NormalTok{(beta\_mat\_init3)}
+\NormalTok{beta\_mat\_init3[}\DecValTok{1}\NormalTok{,] }\OtherTok{\textless{}{-}}\NormalTok{ init[}\DecValTok{3}\NormalTok{,]}
+\NormalTok{acc }\OtherTok{\textless{}{-}} \DecValTok{0}
+\ControlFlowTok{for}\NormalTok{(iter }\ControlFlowTok{in} \DecValTok{2}\SpecialCharTok{:}\NormalTok{S)\{}
+\NormalTok{  beta\_star }\OtherTok{\textless{}{-}} \FunctionTok{rnorm}\NormalTok{(k,beta\_mat\_init3[iter}\DecValTok{{-}1}\NormalTok{,], }\DecValTok{5}\NormalTok{)}
+\NormalTok{  newpost}\OtherTok{=}\FunctionTok{lpost.LR}\NormalTok{(beta\_star,X,y)}
+\NormalTok{  oldpost}\OtherTok{=}\FunctionTok{lpost.LR}\NormalTok{(beta\_mat\_init3[iter}\DecValTok{{-}1}\NormalTok{,],X,y)}
+  \ControlFlowTok{if}\NormalTok{(}\FunctionTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{)}\SpecialCharTok{\textgreater{}}\FunctionTok{exp}\NormalTok{(newpost}\SpecialCharTok{{-}}\NormalTok{oldpost))\{}
+\NormalTok{    beta\_mat\_init3[iter,]}\OtherTok{=}\NormalTok{beta\_mat\_init3[iter}\DecValTok{{-}1}\NormalTok{,]}
+\NormalTok{  \} }\ControlFlowTok{else}\NormalTok{\{}
+\NormalTok{    beta\_mat\_init3[iter,]}\OtherTok{=}\NormalTok{beta\_star}
+\NormalTok{    acc}\OtherTok{=}\NormalTok{acc}\SpecialCharTok{+}\DecValTok{1}
+\NormalTok{  \}}
+  \CommentTok{\#if(iter\%\%1000==0)\{print(c(iter,acc/iter))\}}
+\NormalTok{\}}
+\FunctionTok{print}\NormalTok{(}\FunctionTok{c}\NormalTok{(iter, acc}\SpecialCharTok{/}\NormalTok{iter))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 1.000e+04 1.675e-01
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Forth initialisation}
+\NormalTok{beta\_mat\_init4 }\OtherTok{\textless{}{-}} \FunctionTok{matrix}\NormalTok{(}\ConstantTok{NA}\NormalTok{,}\AttributeTok{nrow=}\NormalTok{S,}\AttributeTok{ncol=}\FunctionTok{ncol}\NormalTok{(X))}
+\NormalTok{k }\OtherTok{\textless{}{-}} \FunctionTok{ncol}\NormalTok{(beta\_mat\_init4)}
+\NormalTok{beta\_mat\_init4[}\DecValTok{1}\NormalTok{,] }\OtherTok{\textless{}{-}}\NormalTok{ init[}\DecValTok{4}\NormalTok{,]}
+\NormalTok{acc }\OtherTok{\textless{}{-}} \DecValTok{0}
+\ControlFlowTok{for}\NormalTok{(iter }\ControlFlowTok{in} \DecValTok{2}\SpecialCharTok{:}\NormalTok{S)\{}
+\NormalTok{  beta\_star }\OtherTok{\textless{}{-}} \FunctionTok{rnorm}\NormalTok{(k,beta\_mat\_init4[iter}\DecValTok{{-}1}\NormalTok{,], }\DecValTok{5}\NormalTok{)}
+\NormalTok{  newpost}\OtherTok{=}\FunctionTok{lpost.LR}\NormalTok{(beta\_star,X,y)}
+\NormalTok{  oldpost}\OtherTok{=}\FunctionTok{lpost.LR}\NormalTok{(beta\_mat\_init4[iter}\DecValTok{{-}1}\NormalTok{,],X,y)}
+  \ControlFlowTok{if}\NormalTok{(}\FunctionTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{)}\SpecialCharTok{\textgreater{}}\FunctionTok{exp}\NormalTok{(newpost}\SpecialCharTok{{-}}\NormalTok{oldpost))\{}
+\NormalTok{    beta\_mat\_init4[iter,]}\OtherTok{=}\NormalTok{beta\_mat\_init4[iter}\DecValTok{{-}1}\NormalTok{,]}
+\NormalTok{  \} }\ControlFlowTok{else}\NormalTok{\{}
+\NormalTok{    beta\_mat\_init4[iter,]}\OtherTok{=}\NormalTok{beta\_star}
+\NormalTok{    acc}\OtherTok{=}\NormalTok{acc}\SpecialCharTok{+}\DecValTok{1}
+\NormalTok{  \}}
+  \CommentTok{\#if(iter\%\%1000==0)\{print(c(iter,acc/iter))\}}
+\NormalTok{\}}
+\FunctionTok{print}\NormalTok{(}\FunctionTok{c}\NormalTok{(iter, acc}\SpecialCharTok{/}\NormalTok{iter))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 1.000e+04 1.655e-01
+\end{verbatim}
+
+Plot the chains for each coefficient (same plot)
+
+\includegraphics{bayesian_wine_class_files/figure-latex/unnamed-chunk-25-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{fit}\SpecialCharTok{$}\NormalTok{coefficients[}\DecValTok{1}\SpecialCharTok{:}\DecValTok{6}\NormalTok{]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##      (Intercept)    fixed_acidity volatile_acidity      citric_acid 
+##      242.7625193        0.2749529       -2.5810021        0.5677943 
+##   residual_sugar        chlorides 
+##        0.2394642       -8.8163654
+\end{verbatim}
+
+\includegraphics{bayesian_wine_class_files/figure-latex/unnamed-chunk-27-1.pdf}
+\#\# Comment
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{fit}\SpecialCharTok{$}\NormalTok{coefficients[}\DecValTok{7}\SpecialCharTok{:}\DecValTok{12}\NormalTok{]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##  free_sulfur_dioxide total_sulfur_dioxide              density 
+##           0.01082060          -0.01653061        -257.79757874 
+##                   pH            sulphates              alcohol 
+##           0.22418522           3.74987886           0.75333905
+\end{verbatim}
+
+\(\beta_0\) (\texttt{Intercept}: 242.7625): No convergence with MLE. All
+four chains do converge to a value around zero. \(\beta_1\)
+(\texttt{fixed\_acidity}: 0.275): First chain containing MLE converges
+to a value close but slightly under the coefficient. The other three
+chains containing random initialisations converge to a value
+approximately 20-30. \(\beta_2\) (\texttt{volative\_acidity}: -2.581):
+All four chains converge to a value close to the coefficient.
+\(\beta_3\) (\texttt{citric\_acid}: 0.568): All four chains converge to
+a value close to the coefficient. \(\beta_4\) (\texttt{residual\_sugar}:
+0.239): All four chains converge to a value close to the coefficient.
+\(\beta_5\) (\texttt{chlorides}: -8.816): All four chains converge to a
+value close to the coefficient. \(\beta_6\)
+(\texttt{free\_sulfur\_dioxide}: 0.011): First chain containing MLE
+converges to a value close but slightly under the coefficient. The other
+three chains containing random initialisations converge to a value
+approximately 20-30. \(\beta_7\) (\texttt{total\_sulfur\_dioxide}:
+-0.017): First chain converges to a value just below coefficient but
+chains 2-4 don't converge to coefficient. \(\beta_8\) (\texttt{density}:
+-257.798): First chain converges to a value at about the coefficient but
+chains 2-4 converge to a value slightly above the coefficient
+\(\beta_9\) (\texttt{pH}: 0.224): All four chains converge to a value
+close to the coefficient. \(\beta_{10}\) (\texttt{sulphates}: 3.750):
+All four chains converge to a value close to the coefficient.
+\(\beta_{11}\) (\texttt{alcohol}: 0.753): First chain converges to a
+value at about the coefficient but chains 2-4 converge to a value above
+the coefficient
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{comment}{%
+\subsection{Comment}\label{comment}}
+
+How good is the distribution for the parameter?
+
+\begin{itemize}
+\tightlist
+\item
+  varied standard deviation of the prior in the posterior distribution
+  function (0.5, 1, 5, 10, 20, 50) \textgreater{} increasing the
+  standard deviation increases the instability \textgreater{} decreasing
+  the standard deviation decreases ability to find convergence with
+  ``true'' value
+\item
+  varied standard deviation of the Metropolis-Hastings algorithm (0.5,
+  1, 5, 10, 20, 50)
+\item
+  varied the random initialised values (+/- 100, 0-1, 0-10, 0-100,
+  10-100, 100-200, 500-1000) \textgreater{} some ranges close to zero
+  produce errors
+\end{itemize}
+
+\hypertarget{posterior-predictive-distribution}{%
+\section{7. Posterior Predictive
+Distribution}\label{posterior-predictive-distribution}}
+
+Approximate the posterior predictive distribution of an unobserved
+variable characterised by the following values for each covariate:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{fixed\_acidity }\OtherTok{\textless{}{-}} \FloatTok{7.5}
+\NormalTok{volatile\_acidity }\OtherTok{\textless{}{-}} \FloatTok{0.6}
+\NormalTok{citric\_acid }\OtherTok{\textless{}{-}} \FloatTok{0.0}
+\NormalTok{residual\_sugar }\OtherTok{\textless{}{-}} \FloatTok{1.7}
+\NormalTok{chlorides }\OtherTok{\textless{}{-}} \FloatTok{0.085}
+\NormalTok{free\_sulfur\_dioxide }\OtherTok{\textless{}{-}} \DecValTok{5}
+\NormalTok{total\_sulfur\_dioxide }\OtherTok{\textless{}{-}} \DecValTok{45}
+\NormalTok{density }\OtherTok{\textless{}{-}} \FloatTok{0.9965}
+\NormalTok{pH }\OtherTok{\textless{}{-}} \FloatTok{3.4}
+\NormalTok{sulphates }\OtherTok{\textless{}{-}} \FloatTok{0.63}
+\NormalTok{alcohol }\OtherTok{\textless{}{-}} \DecValTok{12}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{S }\OtherTok{\textless{}{-}} \DecValTok{20000}
+\NormalTok{beta\_mat2 }\OtherTok{\textless{}{-}} \FunctionTok{matrix}\NormalTok{(}\ConstantTok{NA}\NormalTok{, }\AttributeTok{nrow =}\NormalTok{ S, }\AttributeTok{ncol =} \FunctionTok{ncol}\NormalTok{(X))}
+\NormalTok{beta\_mat2[}\DecValTok{1}\NormalTok{,] }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(}\FunctionTok{coefficients}\NormalTok{(fit))}
+
+\NormalTok{y\_new }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+\NormalTok{x\_new }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{, fixed\_acidity, volatile\_acidity, citric\_acid, residual\_sugar,}
+\NormalTok{           chlorides, free\_sulfur\_dioxide, total\_sulfur\_dioxide, density,}
+\NormalTok{           pH, sulphates, alcohol)}
+\end{Highlighting}
+\end{Shaded}
+
+new model
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(mvtnorm)}
+
+\CommentTok{\# prediction}
+
+\NormalTok{Omega\_prop }\OtherTok{\textless{}{-}} \FunctionTok{solve}\NormalTok{(}\FunctionTok{t}\NormalTok{(X) }\SpecialCharTok{\%*\%}\NormalTok{ X)}
+\NormalTok{k }\OtherTok{\textless{}{-}} \FunctionTok{ncol}\NormalTok{(beta\_mat2)}
+\NormalTok{acc }\OtherTok{\textless{}{-}} \DecValTok{0}
+\ControlFlowTok{for}\NormalTok{(iter }\ControlFlowTok{in} \DecValTok{2}\SpecialCharTok{:}\NormalTok{S)}
+\NormalTok{\{}
+  \CommentTok{\# 1. Propose a new set of values}
+\NormalTok{  beta\_star }\OtherTok{\textless{}{-}} \FunctionTok{rmvnorm}\NormalTok{(}\DecValTok{1}\NormalTok{, beta\_mat2[iter}\DecValTok{{-}1}\NormalTok{,], }\FloatTok{1.5} \SpecialCharTok{*}\NormalTok{ Omega\_prop)}
+  
+  \CommentTok{\# 2. Compute the posterior density on the proposed value and on the old value  }
+\NormalTok{  newpost}\OtherTok{=}\FunctionTok{lpost.LR}\NormalTok{(}\FunctionTok{t}\NormalTok{(beta\_star), X, y)}
+\NormalTok{  oldpost}\OtherTok{=}\FunctionTok{lpost.LR}\NormalTok{(}\FunctionTok{matrix}\NormalTok{(beta\_mat2[iter}\DecValTok{{-}1}\NormalTok{,], }\AttributeTok{ncol=}\DecValTok{1}\NormalTok{), X, y)}
+  
+  \CommentTok{\# 3. Acceptance step}
+  \ControlFlowTok{if}\NormalTok{ (}\FunctionTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{) }\SpecialCharTok{\textgreater{}} \FunctionTok{exp}\NormalTok{(newpost }\SpecialCharTok{{-}}\NormalTok{ oldpost)) \{}
+\NormalTok{    beta\_mat2[iter,] }\OtherTok{=}\NormalTok{ beta\_mat2[iter}\DecValTok{{-}1}\NormalTok{,]}
+\NormalTok{  \} }\ControlFlowTok{else}\NormalTok{ \{}
+\NormalTok{    beta\_mat2[iter,] }\OtherTok{=}\NormalTok{ beta\_star}
+\NormalTok{    acc }\OtherTok{=}\NormalTok{ acc }\SpecialCharTok{+} \DecValTok{1}
+\NormalTok{  \}}
+  \CommentTok{\# 4. Print the stage of the chain}
+  \ControlFlowTok{if}\NormalTok{ (iter}\SpecialCharTok{\%\%}\DecValTok{1000} \SpecialCharTok{==} \DecValTok{0}\NormalTok{)\{ }\FunctionTok{print}\NormalTok{(}\FunctionTok{c}\NormalTok{(iter, acc}\SpecialCharTok{/}\NormalTok{iter)) \}}
+  
+  \CommentTok{\# 5. Prediction }
+\NormalTok{  p\_new }\OtherTok{\textless{}{-}} \FunctionTok{exp}\NormalTok{(}\FunctionTok{sum}\NormalTok{(beta\_mat2[iter,] }\SpecialCharTok{*}\NormalTok{ x\_new) ) }\SpecialCharTok{/}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{+} \FunctionTok{exp}\NormalTok{(}\FunctionTok{sum}\NormalTok{(beta\_mat2[iter,] }\SpecialCharTok{*}\NormalTok{ x\_new) ))}
+\NormalTok{  y\_new[iter] }\OtherTok{\textless{}{-}} \FunctionTok{rbinom}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{1}\NormalTok{,}\AttributeTok{prob=}\NormalTok{p\_new)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 1000.000    0.197
+## [1] 2000.0000    0.1945
+## [1] 3000.0000000    0.1936667
+## [1] 4000.000    0.201
+## [1] 5000.0000    0.2026
+## [1] 6000.0000    0.2035
+## [1] 7000.0000000    0.2041429
+## [1] 8000.00000    0.20125
+## [1] 9000.0000000    0.2042222
+## [1] 1.000e+04 2.048e-01
+## [1] 1.100000e+04 2.048182e-01
+## [1] 1.200000e+04 2.051667e-01
+## [1] 1.300000e+04 2.047692e-01
+## [1] 1.40e+04 2.04e-01
+## [1] 1.500e+04 2.044e-01
+## [1] 1.6000e+04 2.0525e-01
+## [1] 1.700000e+04 2.058235e-01
+## [1] 1.800000e+04 2.055556e-01
+## [1] 1.900000e+04 2.061579e-01
+## [1] 2.0000e+04 2.0725e-01
+\end{verbatim}
+
+Plots
+
+\includegraphics{bayesian_wine_class_files/figure-latex/unnamed-chunk-32-1.pdf}
+
+Plots
+
+\includegraphics{bayesian_wine_class_files/figure-latex/unnamed-chunk-33-1.pdf}
+\(\beta_0\) (\texttt{Intercept}: 242.7625): \#\# No convergence with
+MLE. converge to a value around zero. \(\beta_1\)
+(\texttt{fixed\_acidity}: 0.275): \#\#\\
+\(\beta_2\) (\texttt{volative\_acidity}: -2.581): \#\# \(\beta_3\)
+(\texttt{citric\_acid}: 0.568): \#\# \(\beta_4\)
+(\texttt{residual\_sugar}: 0.239): \#\# \(\beta_5\) (\texttt{chlorides}:
+-8.816): \#\# \(\beta_6\) (\texttt{free\_sulfur\_dioxide}: 0.011): \#\#
+\(\beta_7\) (\texttt{total\_sulfur\_dioxide}: -0.017): \#\# \(\beta_8\)
+(\texttt{density}: -257.798): \#\# \(\beta_9\) (\texttt{pH}: 0.224):
+\#\# \(\beta_{10}\) (\texttt{sulphates}: 3.750): \#\# \(\beta_{11}\)
+(\texttt{alcohol}: 0.753): \#\#
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{table}\NormalTok{(y\_new[}\DecValTok{15000}\SpecialCharTok{:}\DecValTok{20000}\NormalTok{])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##    0 
+## 5001
+\end{verbatim}
+
+\hypertarget{metrop-analysis-of-q6}{%
+\section{8. metrop() analysis of Q6}\label{metrop-analysis-of-q6}}
+
+Implementation of the \texttt{metrop()} function was through the
+\href{https://cran.r-project.org/web/packages/mcmc/vignettes/demo.pdf}{MCMC
+Package Example, Charles J. Geyer}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(mcmc)}
+\NormalTok{out }\OtherTok{\textless{}{-}} \FunctionTok{glm}\NormalTok{(good }\SpecialCharTok{\textasciitilde{}}\NormalTok{ . }\SpecialCharTok{{-}}\NormalTok{ quality }\SpecialCharTok{{-}}\NormalTok{ drinkable, }\AttributeTok{data=}\NormalTok{wine, }\AttributeTok{family=}\NormalTok{binomial, }\AttributeTok{x=}\ConstantTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{lupost\_factory }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(x, y) }\ControlFlowTok{function}\NormalTok{(beta) \{}
+\NormalTok{  eta }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(x }\SpecialCharTok{\%*\%}\NormalTok{ beta)}
+\NormalTok{  logp }\OtherTok{\textless{}{-}} \FunctionTok{ifelse}\NormalTok{(eta }\SpecialCharTok{\textless{}} \DecValTok{0}\NormalTok{, eta }\SpecialCharTok{{-}} \FunctionTok{log1p}\NormalTok{(}\FunctionTok{exp}\NormalTok{(eta)), }\SpecialCharTok{{-}} \FunctionTok{log1p}\NormalTok{(}\FunctionTok{exp}\NormalTok{(}\SpecialCharTok{{-}}\NormalTok{ eta)))}
+\NormalTok{  logq }\OtherTok{\textless{}{-}} \FunctionTok{ifelse}\NormalTok{(eta }\SpecialCharTok{\textless{}} \DecValTok{0}\NormalTok{, }\SpecialCharTok{{-}} \FunctionTok{log1p}\NormalTok{(}\FunctionTok{exp}\NormalTok{(eta)), }\SpecialCharTok{{-}}\NormalTok{ eta }\SpecialCharTok{{-}} \FunctionTok{log1p}\NormalTok{(}\FunctionTok{exp}\NormalTok{(}\SpecialCharTok{{-}}\NormalTok{ eta)))}
+\NormalTok{  logl }\OtherTok{\textless{}{-}} \FunctionTok{sum}\NormalTok{(logp[y }\SpecialCharTok{==} \DecValTok{1}\NormalTok{]) }\SpecialCharTok{+} \FunctionTok{sum}\NormalTok{(logq[y }\SpecialCharTok{==} \DecValTok{0}\NormalTok{])}
+  \FunctionTok{return}\NormalTok{(logl }\SpecialCharTok{{-}} \FunctionTok{sum}\NormalTok{(beta}\SpecialCharTok{\^{}}\DecValTok{2}\NormalTok{) }\SpecialCharTok{/} \DecValTok{8}\NormalTok{)}
+\NormalTok{\}}
+\NormalTok{lupost }\OtherTok{\textless{}{-}} \FunctionTok{lupost\_factory}\NormalTok{(out}\SpecialCharTok{$}\NormalTok{x, out}\SpecialCharTok{$}\NormalTok{y)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{set.seed}\NormalTok{(}\DecValTok{1234}\NormalTok{)}
+\NormalTok{beta.init }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(}\FunctionTok{coefficients}\NormalTok{(out))}
+\NormalTok{out }\OtherTok{\textless{}{-}} \FunctionTok{metrop}\NormalTok{(lupost, beta.init, }\FloatTok{1e3}\NormalTok{)}
+
+\FunctionTok{names}\NormalTok{(out)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##  [1] "accept"       "batch"        "initial"      "final"        "accept.batch"
+##  [6] "initial.seed" "final.seed"   "time"         "lud"          "nbatch"      
+## [11] "blen"         "nspac"        "scale"        "debug"
+\end{verbatim}
+
+Look at the acceptance rate.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{out}\SpecialCharTok{$}\NormalTok{accept}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0
+\end{verbatim}
+
+This is very low, so we can adjust the scale parameter to find an
+acceptance rate around 20\%.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#out \textless{}{-} metrop(out, scale = 0.005)  \# 0.0075}
+\NormalTok{out }\OtherTok{\textless{}{-}} \FunctionTok{metrop}\NormalTok{(out, }\AttributeTok{scale =} \FunctionTok{c}\NormalTok{(}\FloatTok{0.005}\NormalTok{, }\FloatTok{0.00005}\NormalTok{, }\FloatTok{0.00005}\NormalTok{, }\FloatTok{0.00005}\NormalTok{, }\FloatTok{0.00005}\NormalTok{, }\FloatTok{0.00005}\NormalTok{, }\FloatTok{0.00005}\NormalTok{, }\FloatTok{0.00005}\NormalTok{, }\FloatTok{0.0005}\NormalTok{, }\FloatTok{0.00005}\NormalTok{, }\FloatTok{0.00005}\NormalTok{, }\FloatTok{0.00005}\NormalTok{))}
+\NormalTok{out}\SpecialCharTok{$}\NormalTok{accept}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.93
+\end{verbatim}
+
+\includegraphics{bayesian_wine_class_files/figure-latex/unnamed-chunk-40-1.pdf}
+
+\includegraphics{bayesian_wine_class_files/figure-latex/unnamed-chunk-41-1.pdf}
+\#\# VISUAL COMPARISON
+
+\(\beta_0\) (\texttt{Intercept}: 242.7625): \#\# \(\beta_1\)
+(\texttt{fixed\_acidity}: 0.275): \#\# \(\beta_2\)
+(\texttt{volatile\_acidity}: -2.581): \#\# \(\beta_3\)
+(\texttt{citric\_acid}: 0.568): \#\# \(\beta_4\)
+(\texttt{residual\_sugar}: 0.239): \#\# \(\beta_5\) (\texttt{chlorides}:
+-8.816): \#\# \(\beta_6\) (\texttt{free\_sulfur\_dioxide}: 0.011):
+\(\beta_7\) (\texttt{total\_sulfur\_dioxide}: -0.017): \#\# \(\beta_8\)
+(\texttt{density}: -257.798): \#\# \(\beta_9\) (\texttt{pH}: 0.224):
+\#\# \(\beta_{10}\) (\texttt{sulphates}: 3.750): \#\# \(\beta_{11}\)
+(\texttt{alcohol}: 0.753): \#\#
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{summ }\OtherTok{\textless{}{-}} \FunctionTok{matrix}\NormalTok{(}\ConstantTok{NA}\NormalTok{, }\AttributeTok{nrow=}\DecValTok{12}\NormalTok{, }\AttributeTok{ncol=}\DecValTok{6}\NormalTok{)}
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\DecValTok{12}\NormalTok{) \{}
+\NormalTok{  summ[i,}\DecValTok{1}\NormalTok{] }\OtherTok{=} \FunctionTok{mean}\NormalTok{(beta\_mat\_init1[}\DecValTok{2000}\SpecialCharTok{:}\DecValTok{10000}\NormalTok{,i])}
+\NormalTok{  summ[i,}\DecValTok{2}\NormalTok{] }\OtherTok{=} \FunctionTok{sd}\NormalTok{(beta\_mat\_init1[}\DecValTok{2000}\SpecialCharTok{:}\DecValTok{10000}\NormalTok{,i])}
+\NormalTok{  summ[i,}\DecValTok{3}\NormalTok{] }\OtherTok{=} \FunctionTok{mean}\NormalTok{(beta\_mat2[}\DecValTok{12000}\SpecialCharTok{:}\DecValTok{20000}\NormalTok{,i])}
+\NormalTok{  summ[i,}\DecValTok{4}\NormalTok{] }\OtherTok{=} \FunctionTok{sd}\NormalTok{(beta\_mat2[}\DecValTok{12000}\SpecialCharTok{:}\DecValTok{20000}\NormalTok{,i])}
+\NormalTok{  summ[i,}\DecValTok{5}\NormalTok{] }\OtherTok{=} \FunctionTok{mean}\NormalTok{(}\FunctionTok{ts}\NormalTok{(out}\SpecialCharTok{$}\NormalTok{batch)[,i])}
+\NormalTok{  summ[i,}\DecValTok{6}\NormalTok{] }\OtherTok{=} \FunctionTok{sd}\NormalTok{(}\FunctionTok{ts}\NormalTok{(out}\SpecialCharTok{$}\NormalTok{batch)[,i])}
+\NormalTok{\}}
+\FunctionTok{colnames}\NormalTok{(summ) }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"Mean\_MH"}\NormalTok{, }\StringTok{"SD\_MH"}\NormalTok{, }\StringTok{"Mean\_MH2"}\NormalTok{, }\StringTok{"SD\_MH2"}\NormalTok{, }\StringTok{"Mean\_Metrop"}\NormalTok{, }\StringTok{"SD\_Metrop"}\NormalTok{)}
+\FunctionTok{rownames}\NormalTok{(summ) }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"Intercept"}\NormalTok{, }\StringTok{"fixed\_acidity"}\NormalTok{, }\StringTok{"volatile\_acidity"}\NormalTok{, }\StringTok{"citric\_acid"}\NormalTok{, }\StringTok{"residual\_sugar"}\NormalTok{,}
+                    \StringTok{"chlorides"}\NormalTok{, }\StringTok{"free\_sulfur\_dioxide"}\NormalTok{, }\StringTok{"total\_sulfur\_dioxide"}\NormalTok{, }\StringTok{"density"}\NormalTok{,}
+                    \StringTok{"pH"}\NormalTok{, }\StringTok{"sulphates"}\NormalTok{, }\StringTok{"alcohol"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{knitr}\SpecialCharTok{::}\FunctionTok{kable}\NormalTok{(summ)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.24}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.14}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.11}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.12}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.12}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.15}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.11}}@{}}
+\toprule
+& Mean\_MH & SD\_MH & Mean\_MH2 & SD\_MH2 & Mean\_Metrop & SD\_Metrop \\
+\midrule
+\endhead
+Intercept & -0.5637068 & 9.109168 & 1.1370241 & 10.2764904 & 242.5185398
+& 0.1163592 \\
+fixed\_acidity & -4.0923222 & 8.299748 & -0.6128414 & 0.5307802 &
+0.2744363 & 0.0006261 \\
+volatile\_acidity & -0.5276873 & 10.320833 & 5.7746819 & 1.8845393 &
+-2.5813830 & 0.0004172 \\
+citric\_acid & 0.7442450 & 9.748345 & 3.1150746 & 3.2450972 & 0.5680549
+& 0.0003787 \\
+residual\_sugar & -1.7684747 & 9.609014 & 0.1316760 & 0.1420844 &
+0.2385122 & 0.0004638 \\
+chlorides & -1.0061517 & 10.488004 & -6.5390682 & 7.6392746 & -8.8158180
+& 0.0006994 \\
+free\_sulfur\_dioxide & -3.4711866 & 8.842763 & 0.0566240 & 0.0572208 &
+0.0087703 & 0.0005885 \\
+total\_sulfur\_dioxide & -10.4174311 & 7.124903 & -0.0241383 & 0.0093251
+& -0.0172332 & 0.0005932 \\
+density & -0.5301853 & 10.066320 & 1.4854018 & 10.5210828 & -257.7990758
+& 0.0026897 \\
+pH & -0.3782914 & 9.980852 & 1.2330909 & 4.2646066 & 0.2245523 &
+0.0003027 \\
+sulphates & 0.4036342 & 9.818120 & -1.8216447 & 3.0478478 & 3.7499248 &
+0.0003031 \\
+alcohol & -4.7336853 & 7.977308 & -1.2473508 & 0.3662575 & 0.7520774 &
+0.0005853 \\
+\bottomrule
+\end{longtable}
+
+\end{document}
