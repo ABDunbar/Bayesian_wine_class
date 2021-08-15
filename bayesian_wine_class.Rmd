@@ -92,14 +92,19 @@ fit <- glm(
 ## Significant coefficients
 The significant coefficients are labelled in the last column of the summary() function.  Most significant coefficients are:
 
-* `sulphates` (Pr($\alpha$ > 6.924 = 4.39e-12)),
+* `sulphates`(Pr($\alpha$ > 6.924 = 4.39e-12)),
+the `sulphates` coefficient is 3.750. A positive predictor whereby larger values of sulphate will predict a "good" wine.
 * `alcohol`(Pr($\alpha$ > 5.724 = 1.04e-08)),
+the `alcohol` coefficient is 0.7533. A positive predictor whereby larger values of alcohol will predict a "good" wine.
 * `volatile_acidity` (Pr($\alpha$ > |-3.291| = 9.99e-4)), and
+the `volatile_acidity` coefficient is -2.581. A negative predictor whereby larger values of volatile acidity will predict a "not-good" wine.
 * `total_sulfur_dioxide` (Pr($\alpha$ > |-3.378| = 7.31e-4))
+the `total_sulfur_dioxide` coefficient is -0.026. A negative predictor whereby larger values of total sulfur dioxide will predict a "not-good" wine.
 
 ```{r}
 fit %>% summary()
 ```
+
 # 5. Impact on outcome by varying total_sulfur_dioxide
 By fixing all coefficients and varying one, we can see the impact of one particular coefficient has on the probabilistic outcome of the logistic regression. 
 
@@ -229,7 +234,7 @@ lpost.LR <- function(beta, x, y) {
   # sum of both contributions: when y=1 + when y=0
   logl <- sum(logp[y==1]) + sum(logq[y==0])
   # log prior: normal indep prior dists $N(0, 100)$
-  lprior <- sum(dnorm(beta, 0, 10,log = T))  # 10: mixed, 50 var, 100 large var, 20 like 10, 5 low
+  lprior <- sum(dnorm(beta, 0, 100,log = T))  # 10: mixed, 50 var, 100 large var, 20 like 10, 5 low
   # return log posterior (likelihood + prior)
   return(logl + lprior)
 }
@@ -240,7 +245,7 @@ set.seed(1234)
 ```
 ## Number of simulations
 ```{r}
-S <- 10^4
+S <- 20000
 ```
 Set `X` and `y` variables
 ```{r}
@@ -347,37 +352,37 @@ Plot the chains for each coefficient (same plot)
 
 ```{r, echo=FALSE}
 par(mfrow=c(3,2))
-plot(beta_mat_init1[,1], type="l", col="magenta", ylab=expression(beta[0]))
+plot(beta_mat_init1[,1], type="l", col="magenta", main=expression(beta[0]))
 lines(beta_mat_init2[,1], type="l", col="green")
 lines(beta_mat_init3[,1], type="l", col="red")
 lines(beta_mat_init4[,1], type="l", col="blue")
 abline(h=fit$coefficients[1],col="red",lty=2)
 
-plot(beta_mat_init1[,2], type="l", col="magenta", ylim=(c(-30, 50)), ylab=expression(beta[1]))
+plot(beta_mat_init1[,2], type="l", col="magenta", main=expression(beta[1]))  #, ylim=(c(-30, 50))
 lines(beta_mat_init2[,2], type="l", col="green")
 lines(beta_mat_init3[,2], type="l", col="red")
 lines(beta_mat_init4[,2], type="l", col="blue")
 abline(h=fit$coefficients[2],col="red",lty=2)
 
-plot(beta_mat_init1[,3], type="l", col="magenta", ylab=expression(beta[2]))
+plot(beta_mat_init1[,3], type="l", col="magenta", main=expression(beta[2]))
 lines(beta_mat_init2[,3], type="l", col="green")
 lines(beta_mat_init3[,3], type="l", col="red")
 lines(beta_mat_init4[,3], type="l", col="blue")
 abline(h=fit$coefficients[3],col="red",lty=2)
 
-plot(beta_mat_init1[,4], type="l", col="magenta", ylab=expression(beta[3]))
+plot(beta_mat_init1[,4], type="l", col="magenta", main=expression(beta[3]))
 lines(beta_mat_init2[,4], type="l", col="green")
 lines(beta_mat_init3[,4], type="l", col="red")
 lines(beta_mat_init4[,4], type="l", col="blue")
 abline(h=fit$coefficients[4],col="red",lty=2)
 
-plot(beta_mat_init1[,5], type="l", col="magenta", ylab=expression(beta[4]))
+plot(beta_mat_init1[,5], type="l", col="magenta", main=expression(beta[4]))
 lines(beta_mat_init2[,5], type="l", col="green")
 lines(beta_mat_init3[,5], type="l", col="red")
 lines(beta_mat_init4[,5], type="l", col="blue")
 abline(h=fit$coefficients[5],col="red",lty=2)
 
-plot(beta_mat_init1[,6], type="l", col="magenta", ylab=expression(beta[5]))
+plot(beta_mat_init1[,6], type="l", col="magenta", main=expression(beta[5]))
 lines(beta_mat_init2[,6], type="l", col="green")
 lines(beta_mat_init3[,6], type="l", col="red")
 lines(beta_mat_init4[,6], type="l", col="blue")
@@ -392,13 +397,13 @@ fit$coefficients[1:6]
 ```{r, echo=FALSE}
 par(mfrow=c(3,2))
 
-plot(beta_mat_init1[,7], type="l", col="magenta", ylim=(c(-30, 30)), main=expression(beta[6]))
+plot(beta_mat_init1[,7], type="l", col="magenta", main=expression(beta[6]))  # , ylim=(c(-30, 30))
 lines(beta_mat_init2[,7], type="l", col="green")
 lines(beta_mat_init3[,7], type="l", col="red")
 lines(beta_mat_init4[,7], type="l", col="blue")
 abline(h=fit$coefficients[7],col="red",lty=2)
 
-plot(beta_mat_init1[,8], type="l", col="magenta", ylim=(c(-30, 40)), main=expression(beta[7]))
+plot(beta_mat_init1[,8], type="l", col="magenta", main=expression(beta[7]))  # , ylim=(c(-30, 40))
 lines(beta_mat_init2[,8], type="l", col="green")
 lines(beta_mat_init3[,8], type="l", col="red")
 lines(beta_mat_init4[,8], type="l", col="blue")
@@ -422,7 +427,7 @@ lines(beta_mat_init3[,11], type="l", col="red")
 lines(beta_mat_init4[,11], type="l", col="blue")
 abline(h=fit$coefficients[11],col="red",lty=2)
 
-plot(beta_mat_init1[,12], type="l", col="magenta", ylim=(c(-30, 50)), main=expression(beta[11]))
+plot(beta_mat_init1[,12], type="l", col="magenta", main=expression(beta[11]))  # , ylim=(c(-30, 50))
 lines(beta_mat_init2[,12], type="l", col="green")
 lines(beta_mat_init3[,12], type="l", col="red")
 lines(beta_mat_init4[,12], type="l", col="blue")
@@ -444,6 +449,8 @@ $\beta_8$ (`density`: -257.798): First chain converges to a value at about the c
 $\beta_9$ (`pH`: 0.224): All four chains converge to a value close to the coefficient.
 $\beta_{10}$ (`sulphates`: 3.750): All four chains converge to a value close to the coefficient.
 $\beta_{11}$ (`alcohol`: 0.753): First chain converges to a value at about the coefficient but chains 2-4 converge to a value above the coefficient
+
+
 
 --------------------------------------------------------------------------------
 
@@ -684,5 +691,13 @@ rownames(summ) <- c("Intercept", "fixed_acidity", "volatile_acidity", "citric_ac
 knitr::kable(summ)
 ```
 
+```{r}
+# hist(beta_mat_init1[,1])
+# ci0 <- quantile(beta_mat_init1[,1], prob=c(.025,.975)) 
+par(mfrow=c(4,3)) 
+for (i in 1:12) {
+hist(beta_mat_init1[10000:20000,i], main="Beta0", prob=TRUE); abline(v=c(summ[i,1],quantile(beta_mat_init1[10000:20000,i], prob=c(.025,.975))), col="red")
+}
+```
 
 
